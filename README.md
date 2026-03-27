@@ -43,8 +43,6 @@ VetCare History permite a dueños de mascotas administrar su información clíni
 El proyecto sigue la arquitectura MVVM, usando Provider como gestor de estado.
 
 lib/
-├── main.dart
-├── app.dart
 ├── core/
 │   ├── constants/
 │   ├── utils/
