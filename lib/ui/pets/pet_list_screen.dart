@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../auth/login_screen.dart';
+import 'add_pet_page.dart';
 
 class PetListScreen extends StatelessWidget {
   const PetListScreen({super.key});
@@ -39,7 +40,7 @@ class PetListScreen extends StatelessWidget {
             ),
             SizedBox(height: 8),
             Text(
-              'Próximamente: Lista de mascotas',
+              'Registra tu primera mascota',
               style: TextStyle(color: Colors.grey),
             ),
           ],
@@ -47,8 +48,9 @@ class PetListScreen extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Próximamente: Registrar mascota')),
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AddPetPage()),
           );
         },
         child: const Icon(Icons.add),
