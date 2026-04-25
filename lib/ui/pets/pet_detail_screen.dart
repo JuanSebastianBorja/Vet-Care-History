@@ -42,7 +42,8 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
     await Navigator.push(
       context,
       MaterialPageRoute(
-          builder: (_) => PetFormScreen(userId: uid, pet: _pet)),
+        builder: (_) => PetFormScreen(userId: uid, pet: _pet),
+      ),
     );
     if (!mounted) return;
     final updated = context
@@ -57,21 +58,21 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Eliminar mascota'),
-        content:
-            Text('¿Eliminar a ${_pet.name}? Se borrará todo su historial.'),
+        content: Text(
+          '¿Eliminar a ${_pet.name}? Se borrará todo su historial.',
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancelar')),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
           TextButton(
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             onPressed: () async {
               Navigator.pop(ctx);
-              final ok =
-                  await context.read<PetViewModel>().deletePet(_pet.id);
+              final ok = await context.read<PetViewModel>().deletePet(_pet.id);
               if (ok && mounted) Navigator.pop(context);
             },
             child: const Text('Eliminar'),
@@ -85,14 +86,16 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text('Eliminar $label'),
-        content: Text('¿Eliminar este registro? Esta acción no se puede deshacer.'),
+        content: Text(
+          '¿Eliminar este registro? Esta acción no se puede deshacer.',
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancelar')),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
           TextButton(
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             onPressed: () async {
@@ -125,7 +128,8 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                     const Padding(
                       padding: EdgeInsets.all(32),
                       child: CircularProgressIndicator(
-                          color: Color(0xFF2E7D32)),
+                        color: Color(0xFF2E7D32),
+                      ),
                     )
                   else ...[
                     _buildConsultationSection(histVm),
@@ -168,8 +172,7 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
       expandedHeight: 300,
       pinned: true,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new_rounded,
-            color: Colors.white),
+        icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
         onPressed: () => Navigator.pop(context),
       ),
       flexibleSpace: FlexibleSpaceBar(
@@ -199,9 +202,10 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                   Text(
                     _pet.name,
                     style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 30,
-                        fontWeight: FontWeight.bold),
+                      color: Colors.white,
+                      fontSize: 30,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Row(
@@ -224,54 +228,70 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
 
   Widget _buildHeroPhoto() {
     if (_pet.photoUrl != null) {
-      return Image.network(_pet.photoUrl!, fit: BoxFit.cover,
-          errorBuilder: (ctx, err, stack) => _photoPlaceholder());
+      return Image.network(
+        _pet.photoUrl!,
+        fit: BoxFit.cover,
+        errorBuilder: (ctx, err, stack) => _photoPlaceholder(),
+      );
     }
     return _photoPlaceholder();
   }
 
   Widget _photoPlaceholder() => Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF1B5E20), Color(0xFF4CAF50)],
-          ),
-        ),
-        child: const Center(
-            child: Icon(Icons.pets, size: 80, color: Colors.white24)),
-      );
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xFF1B5E20), Color(0xFF4CAF50)],
+      ),
+    ),
+    child: const Center(
+      child: Icon(Icons.pets, size: 80, color: Colors.white24),
+    ),
+  );
 
   Widget _badge(String text, Color color) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.85),
-            borderRadius: BorderRadius.circular(12)),
-        child: Text(text,
-            style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w600)),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.85),
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Text(
+      text,
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+  );
 
   Widget _buildStatRow() => Row(
-        children: [
-          _statCard(Icons.cake_outlined, 'Edad', _pet.ageString,
-              const Color(0xFF1565C0)),
-          const SizedBox(width: 10),
-          _statCard(Icons.wc_outlined, 'Sexo', _pet.sexLabel,
-              const Color(0xFF6A1B9A)),
-          const SizedBox(width: 10),
-          _statCard(
-            _pet.notificationsEnabled
-                ? Icons.notifications_active_outlined
-                : Icons.notifications_off_outlined,
-            'Avisos',
-            _pet.notificationsEnabled ? 'Activo' : 'Apagado',
-            const Color(0xFF2E7D32),
-          ),
-        ],
-      );
+    children: [
+      _statCard(
+        Icons.cake_outlined,
+        'Edad',
+        _pet.ageString,
+        const Color(0xFF1565C0),
+      ),
+      const SizedBox(width: 10),
+      _statCard(
+        Icons.wc_outlined,
+        'Sexo',
+        _pet.sexLabel,
+        const Color(0xFF6A1B9A),
+      ),
+      const SizedBox(width: 10),
+      _statCard(
+        _pet.notificationsEnabled
+            ? Icons.notifications_active_outlined
+            : Icons.notifications_off_outlined,
+        'Avisos',
+        _pet.notificationsEnabled ? 'Activo' : 'Apagado',
+        const Color(0xFF2E7D32),
+      ),
+    ],
+  );
 
   Widget _statCard(IconData icon, String label, String value, Color color) =>
       Expanded(
@@ -282,16 +302,21 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
               children: [
                 Icon(icon, color: color, size: 22),
                 const SizedBox(height: 6),
-                Text(label,
-                    style:
-                        const TextStyle(fontSize: 11, color: Colors.grey)),
+                Text(
+                  label,
+                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                ),
                 const SizedBox(height: 2),
-                Text(value,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 13),
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
             ),
           ),
@@ -305,22 +330,26 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
           width: 38,
           height: 38,
           decoration: BoxDecoration(
-              color: const Color(0xFF1565C0).withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10)),
-          child: const Icon(Icons.medical_services_outlined,
-              color: Color(0xFF1565C0), size: 20),
+            color: const Color(0xFF1565C0).withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(
+            Icons.medical_services_outlined,
+            color: Color(0xFF1565C0),
+            size: 20,
+          ),
         ),
         title: Text(
-            'Consultas (${vm.consultations.length})',
-            style: const TextStyle(
-                fontWeight: FontWeight.w600, fontSize: 15)),
+          'Consultas (${vm.consultations.length})',
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+        ),
         children: [
           _addButton('Agregar consulta', const Color(0xFF1565C0), () async {
             await Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (_) =>
-                      ConsultationFormScreen(petId: _pet.id)),
+                builder: (_) => ConsultationFormScreen(petId: _pet.id),
+              ),
             );
             _reload();
           }),
@@ -334,8 +363,7 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
     );
   }
 
-  Widget _consultationTile(
-      ConsultationModel c, HistoryViewModel vm) {
+  Widget _consultationTile(ConsultationModel c, HistoryViewModel vm) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
       child: Card(
@@ -356,14 +384,21 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                     ),
                     child: Column(
                       children: [
-                        Text(c.dayStr,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                                color: Color(0xFF1565C0))),
-                        Text(c.monthStr,
-                            style: const TextStyle(
-                                fontSize: 10, color: Color(0xFF1565C0))),
+                        Text(
+                          c.dayStr,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: Color(0xFF1565C0),
+                          ),
+                        ),
+                        Text(
+                          c.monthStr,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Color(0xFF1565C0),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -372,24 +407,29 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(c.motive,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold)),
-                        if (c.diagnosis != null &&
-                            c.diagnosis!.isNotEmpty)
-                          Text(c.diagnosis!,
-                              style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey.shade600),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis),
+                        Text(
+                          c.motive,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        if (c.diagnosis != null && c.diagnosis!.isNotEmpty)
+                          Text(
+                            c.diagnosis!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                       ],
                     ),
                   ),
                   if (c.photos.isNotEmpty)
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFF1565C0).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
@@ -397,13 +437,19 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.photo,
-                              size: 12, color: Color(0xFF1565C0)),
+                          const Icon(
+                            Icons.photo,
+                            size: 12,
+                            color: Color(0xFF1565C0),
+                          ),
                           const SizedBox(width: 2),
-                          Text('${c.photos.length}',
-                              style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Color(0xFF1565C0))),
+                          Text(
+                            '${c.photos.length}',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF1565C0),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -416,8 +462,7 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: c.photos.length,
-                    separatorBuilder: (ctx, i) =>
-                        const SizedBox(width: 6),
+                    separatorBuilder: (ctx, i) => const SizedBox(width: 6),
                     itemBuilder: (ctx, i) => ClipRRect(
                       borderRadius: BorderRadius.circular(8),
                       child: Image.network(
@@ -429,8 +474,7 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                           width: 60,
                           height: 60,
                           color: Colors.grey.shade200,
-                          child: const Icon(Icons.broken_image,
-                              size: 20),
+                          child: const Icon(Icons.broken_image, size: 20),
                         ),
                       ),
                     ),
@@ -447,7 +491,9 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                         context,
                         MaterialPageRoute(
                           builder: (_) => ConsultationFormScreen(
-                              petId: _pet.id, consultation: c),
+                            petId: _pet.id,
+                            consultation: c,
+                          ),
                         ),
                       );
                       _reload();
@@ -455,17 +501,21 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                     icon: const Icon(Icons.edit_outlined, size: 16),
                     label: const Text('Editar'),
                     style: TextButton.styleFrom(
-                        foregroundColor: const Color(0xFF1565C0),
-                        visualDensity: VisualDensity.compact),
+                      foregroundColor: const Color(0xFF1565C0),
+                      visualDensity: VisualDensity.compact,
+                    ),
                   ),
                   TextButton.icon(
                     onPressed: () => _confirmDelete(
-                        'consulta', () => vm.deleteConsultation(c.id)),
+                      'consulta',
+                      () => vm.deleteConsultation(c.id),
+                    ),
                     icon: const Icon(Icons.delete_outline, size: 16),
                     label: const Text('Eliminar'),
                     style: TextButton.styleFrom(
-                        foregroundColor: Colors.red,
-                        visualDensity: VisualDensity.compact),
+                      foregroundColor: Colors.red,
+                      visualDensity: VisualDensity.compact,
+                    ),
                   ),
                 ],
               ),
@@ -483,20 +533,27 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
           width: 38,
           height: 38,
           decoration: BoxDecoration(
-              color: const Color(0xFF6A1B9A).withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10)),
-          child: const Icon(Icons.vaccines_outlined,
-              color: Color(0xFF6A1B9A), size: 20),
+            color: const Color(0xFF6A1B9A).withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(
+            Icons.vaccines_outlined,
+            color: Color(0xFF6A1B9A),
+            size: 20,
+          ),
         ),
-        title: Text('Vacunas (${vm.vaccines.length})',
-            style: const TextStyle(
-                fontWeight: FontWeight.w600, fontSize: 15)),
+        title: Text(
+          'Vacunas (${vm.vaccines.length})',
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+        ),
         children: [
           _addButton('Agregar vacuna', const Color(0xFF6A1B9A), () async {
             await Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (_) => VaccineFormScreen(petId: _pet.id)),
+                builder: (_) =>
+                    VaccineFormScreen(petId: _pet.id, petName: _pet.name),
+              ),
             );
             _reload();
           }),
@@ -512,8 +569,7 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
 
   Widget _vaccineTile(VaccineModel v, HistoryViewModel vm) {
     final overdue = v.isOverdue;
-    final dueColor =
-        overdue ? Colors.red.shade600 : const Color(0xFF2E7D32);
+    final dueColor = overdue ? Colors.red.shade600 : const Color(0xFF2E7D32);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
@@ -529,31 +585,42 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
             ),
             child: Icon(Icons.vaccines_outlined, color: dueColor, size: 20),
           ),
-          title: Text(v.vaccineName,
-              style: const TextStyle(fontWeight: FontWeight.w600)),
+          title: Text(
+            v.vaccineName,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Aplicada: ${v.applicationDateStr}',
-                  style: const TextStyle(fontSize: 12)),
+              Text(
+                'Aplicada: ${v.applicationDateStr}',
+                style: const TextStyle(fontSize: 12),
+              ),
               Row(
                 children: [
-                  Text('Próxima: ${v.nextDueDateStr}',
-                      style: TextStyle(fontSize: 12, color: dueColor)),
+                  Text(
+                    'Próxima: ${v.nextDueDateStr}',
+                    style: TextStyle(fontSize: 12, color: dueColor),
+                  ),
                   if (overdue) ...[
                     const SizedBox(width: 4),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 4, vertical: 1),
+                        horizontal: 4,
+                        vertical: 1,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.red.shade600,
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: const Text('VENCIDA',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        'VENCIDA',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ],
                 ],
@@ -565,14 +632,20 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               IconButton(
-                icon: const Icon(Icons.edit_outlined,
-                    size: 18, color: Color(0xFF6A1B9A)),
+                icon: const Icon(
+                  Icons.edit_outlined,
+                  size: 18,
+                  color: Color(0xFF6A1B9A),
+                ),
                 onPressed: () async {
                   await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) =>
-                          VaccineFormScreen(petId: _pet.id, vaccine: v),
+                      builder: (_) => VaccineFormScreen(
+                        petId: _pet.id,
+                        vaccine: v,
+                        petName: _pet.name,
+                      ),
                     ),
                   );
                   _reload();
@@ -580,10 +653,13 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                 visualDensity: VisualDensity.compact,
               ),
               IconButton(
-                icon: Icon(Icons.delete_outline,
-                    size: 18, color: Colors.red.shade400),
-                onPressed: () => _confirmDelete(
-                    'vacuna', () => vm.deleteVaccine(v.id)),
+                icon: Icon(
+                  Icons.delete_outline,
+                  size: 18,
+                  color: Colors.red.shade400,
+                ),
+                onPressed: () =>
+                    _confirmDelete('vacuna', () => vm.deleteVaccine(v.id)),
                 visualDensity: VisualDensity.compact,
               ),
             ],
@@ -600,25 +676,34 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
           width: 38,
           height: 38,
           decoration: BoxDecoration(
-              color: const Color(0xFF00838F).withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10)),
-          child: const Icon(Icons.bug_report_outlined,
-              color: Color(0xFF00838F), size: 20),
+            color: const Color(0xFF00838F).withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(
+            Icons.bug_report_outlined,
+            color: Color(0xFF00838F),
+            size: 20,
+          ),
         ),
         title: Text(
-            'Desparasitaciones (${vm.dewormings.length})',
-            style: const TextStyle(
-                fontWeight: FontWeight.w600, fontSize: 15)),
+          'Desparasitaciones (${vm.dewormings.length})',
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+        ),
         children: [
-          _addButton('Agregar desparasitación', const Color(0xFF00838F),
-              () async {
-            await Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) => DewormingFormScreen(petId: _pet.id)),
-            );
-            _reload();
-          }),
+          _addButton(
+            'Agregar desparasitación',
+            const Color(0xFF00838F),
+            () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      DewormingFormScreen(petId: _pet.id, petName: _pet.name),
+                ),
+              );
+              _reload();
+            },
+          ),
           if (vm.dewormings.isEmpty)
             _emptyState(Icons.bug_report_outlined)
           else
@@ -631,8 +716,7 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
 
   Widget _dewormingTile(DewormingModel d, HistoryViewModel vm) {
     final overdue = d.isOverdue;
-    final dueColor =
-        overdue ? Colors.red.shade600 : const Color(0xFF00838F);
+    final dueColor = overdue ? Colors.red.shade600 : const Color(0xFF00838F);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
@@ -646,34 +730,41 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
               color: dueColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),
-            child:
-                Icon(Icons.bug_report_outlined, color: dueColor, size: 20),
+            child: Icon(Icons.bug_report_outlined, color: dueColor, size: 20),
           ),
-          title: Text(d.product,
-              style: const TextStyle(fontWeight: FontWeight.w600)),
+          title: Text(
+            d.product,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(d.detailStr,
-                  style: const TextStyle(fontSize: 12)),
+              Text(d.detailStr, style: const TextStyle(fontSize: 12)),
               Row(
                 children: [
-                  Text('Próxima: ${d.nextDueDateStr}',
-                      style: TextStyle(fontSize: 12, color: dueColor)),
+                  Text(
+                    'Próxima: ${d.nextDueDateStr}',
+                    style: TextStyle(fontSize: 12, color: dueColor),
+                  ),
                   if (overdue) ...[
                     const SizedBox(width: 4),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 4, vertical: 1),
+                        horizontal: 4,
+                        vertical: 1,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.red.shade600,
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: const Text('VENCIDA',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        'VENCIDA',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ],
                 ],
@@ -685,14 +776,20 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               IconButton(
-                icon: const Icon(Icons.edit_outlined,
-                    size: 18, color: Color(0xFF00838F)),
+                icon: const Icon(
+                  Icons.edit_outlined,
+                  size: 18,
+                  color: Color(0xFF00838F),
+                ),
                 onPressed: () async {
                   await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (_) => DewormingFormScreen(
-                          petId: _pet.id, deworming: d),
+                        petId: _pet.id,
+                        deworming: d,
+                        petName: _pet.name,
+                      ),
                     ),
                   );
                   _reload();
@@ -700,10 +797,15 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                 visualDensity: VisualDensity.compact,
               ),
               IconButton(
-                icon: Icon(Icons.delete_outline,
-                    size: 18, color: Colors.red.shade400),
+                icon: Icon(
+                  Icons.delete_outline,
+                  size: 18,
+                  color: Colors.red.shade400,
+                ),
                 onPressed: () => _confirmDelete(
-                    'desparasitación', () => vm.deleteDeworming(d.id)),
+                  'desparasitación',
+                  () => vm.deleteDeworming(d.id),
+                ),
                 visualDensity: VisualDensity.compact,
               ),
             ],
@@ -713,30 +815,27 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
     );
   }
 
-  Widget _addButton(String label, Color color, VoidCallback onTap) =>
-      Padding(
-        padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
-        child: OutlinedButton.icon(
-          onPressed: onTap,
-          icon: Icon(Icons.add, size: 18, color: color),
-          label: Text(label, style: TextStyle(color: color)),
-          style: OutlinedButton.styleFrom(
-            side: BorderSide(color: color.withValues(alpha: 0.4)),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10)),
-          ),
-        ),
-      );
+  Widget _addButton(String label, Color color, VoidCallback onTap) => Padding(
+    padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+    child: OutlinedButton.icon(
+      onPressed: onTap,
+      icon: Icon(Icons.add, size: 18, color: color),
+      label: Text(label, style: TextStyle(color: color)),
+      style: OutlinedButton.styleFrom(
+        side: BorderSide(color: color.withValues(alpha: 0.4)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    ),
+  );
 
   Widget _emptyState(IconData icon) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-        child: Column(
-          children: [
-            Icon(icon, size: 36, color: Colors.grey.shade300),
-            const SizedBox(height: 8),
-            Text('Sin registros',
-                style: TextStyle(color: Colors.grey.shade500)),
-          ],
-        ),
-      );
+    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+    child: Column(
+      children: [
+        Icon(icon, size: 36, color: Colors.grey.shade300),
+        const SizedBox(height: 8),
+        Text('Sin registros', style: TextStyle(color: Colors.grey.shade500)),
+      ],
+    ),
+  );
 }

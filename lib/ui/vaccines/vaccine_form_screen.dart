@@ -5,9 +5,15 @@ import '../../viewmodels/history_viewmodel.dart';
 
 class VaccineFormScreen extends StatefulWidget {
   final String petId;
+  final String petName;
   final VaccineModel? vaccine;
 
-  const VaccineFormScreen({super.key, required this.petId, this.vaccine});
+  const VaccineFormScreen({
+    super.key,
+    required this.petId,
+    required this.petName,
+    this.vaccine,
+  });
 
   @override
   State<VaccineFormScreen> createState() => _VaccineFormScreenState();
@@ -41,7 +47,9 @@ class _VaccineFormScreenState extends State<VaccineFormScreen> {
   }
 
   Future<void> _pickDate(bool isApplication) async {
-    final initial = isApplication ? _applicationDate : (_nextDueDate ?? DateTime.now());
+    final initial = isApplication
+        ? _applicationDate
+        : (_nextDueDate ?? DateTime.now());
     final first = isApplication ? DateTime(2000) : _applicationDate;
     final picked = await showDatePicker(
       context: context,
@@ -85,9 +93,9 @@ class _VaccineFormScreenState extends State<VaccineFormScreen> {
     final vm = context.read<HistoryViewModel>();
     final bool ok;
     if (_isEditing) {
-      ok = await vm.updateVaccine(vaccine);
+      ok = await vm.updateVaccine(vaccine, widget.petName);
     } else {
-      ok = await vm.addVaccine(vaccine);
+      ok = await vm.addVaccine(vaccine, widget.petName);
     }
 
     if (!mounted) return;
@@ -101,7 +109,9 @@ class _VaccineFormScreenState extends State<VaccineFormScreen> {
           content: Text(vm.error ?? 'Error al guardar'),
           backgroundColor: Colors.red.shade600,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       );
     }
@@ -152,16 +162,21 @@ class _VaccineFormScreenState extends State<VaccineFormScreen> {
                 height: 52,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6A1B9A)),
+                    backgroundColor: const Color(0xFF6A1B9A),
+                  ),
                   onPressed: _saving ? null : _submit,
                   child: _saving
                       ? const SizedBox(
                           height: 20,
                           width: 20,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white),
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
                         )
-                      : Text(_isEditing ? 'Guardar cambios' : 'Registrar vacuna'),
+                      : Text(
+                          _isEditing ? 'Guardar cambios' : 'Registrar vacuna',
+                        ),
                 ),
               ),
             ],
@@ -208,8 +223,10 @@ class _VaccineFormScreenState extends State<VaccineFormScreen> {
                 child: const Icon(Icons.clear, size: 20),
               )
             else
-              Text(label,
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade400)),
+              Text(
+                label,
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
+              ),
           ],
         ),
       ),
