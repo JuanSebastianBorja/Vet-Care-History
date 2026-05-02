@@ -65,7 +65,6 @@ class NotificationService {
       'notification-sync',
       _backgroundTask,
       frequency: const Duration(hours: 12),
-      constraints: Constraints(networkType: NetworkType.not_required),
     );
 
     _isInitialized = true;

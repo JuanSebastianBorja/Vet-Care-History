@@ -46,9 +46,11 @@ class PetViewModel extends ChangeNotifier {
 
   void _applyFilters() {
     _filtered = _pets.where((pet) {
-      final matchesSearch = _searchQuery.isEmpty ||
+      final matchesSearch =
+          _searchQuery.isEmpty ||
           pet.name.toLowerCase().contains(_searchQuery.toLowerCase());
-      final matchesSpecies = _speciesFilter == 'Todos' ||
+      final matchesSpecies =
+          _speciesFilter == 'Todos' ||
           pet.species.toLowerCase() == _speciesFilter.toLowerCase();
       return matchesSearch && matchesSpecies;
     }).toList();
@@ -64,7 +66,10 @@ class PetViewModel extends ChangeNotifier {
         final bytes = await photo.readAsBytes();
         final mime = photo.mimeType ?? 'image/jpeg';
         final url = await _service.uploadPetPhoto(
-            'tmp_${DateTime.now().millisecondsSinceEpoch}', bytes, mime);
+          'tmp_${DateTime.now().millisecondsSinceEpoch}',
+          bytes,
+          mime,
+        );
         petToSave = pet.copyWith(photoUrl: url);
       }
       final saved = await _service.addPet(petToSave);
@@ -90,8 +95,7 @@ class PetViewModel extends ChangeNotifier {
       if (newPhoto != null) {
         final bytes = await newPhoto.readAsBytes();
         final mime = newPhoto.mimeType ?? 'image/jpeg';
-        final url =
-            await _service.uploadPetPhoto(pet.id, bytes, mime);
+        final url = await _service.uploadPetPhoto(pet.id, bytes, mime);
         petToSave = pet.copyWith(photoUrl: url);
       }
       final updated = await _service.updatePet(petToSave);
@@ -131,5 +135,24 @@ class PetViewModel extends ChangeNotifier {
   void clearError() {
     _error = null;
     notifyListeners();
+  }
+
+  Future<bool> togglePetNotifications(String petId, bool enabled) async {
+    try {
+      final updatedPet = await _service.toggleNotifications(petId, enabled);
+
+      // Actualizar la lista local
+      final index = _pets.indexWhere((p) => p.id == petId);
+      if (index != -1) {
+        _pets[index] = updatedPet;
+        _applyFilters(); // Re-aplicar filtros por si acaso
+        notifyListeners();
+      }
+      return true;
+    } catch (e) {
+      _error = e.toString().replaceAll('Exception: ', '');
+      notifyListeners();
+      return false;
+    }
   }
 }

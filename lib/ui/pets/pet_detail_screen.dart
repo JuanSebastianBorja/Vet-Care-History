@@ -282,13 +282,17 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
         const Color(0xFF6A1B9A),
       ),
       const SizedBox(width: 10),
-      _statCard(
-        _pet.notificationsEnabled
-            ? Icons.notifications_active_outlined
-            : Icons.notifications_off_outlined,
-        'Avisos',
-        _pet.notificationsEnabled ? 'Activo' : 'Apagado',
-        const Color(0xFF2E7D32),
+      // Envuelve la tarjeta de Avisos en un GestureDetector
+      GestureDetector(
+        onTap: _toggleNotifications,
+        child: _statCard(
+          _pet.notificationsEnabled
+              ? Icons.notifications_active_outlined
+              : Icons.notifications_off_outlined,
+          'Avisos',
+          _pet.notificationsEnabled ? 'Activo' : 'Apagado',
+          const Color(0xFF2E7D32),
+        ),
       ),
     ],
   );
@@ -838,4 +842,29 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
       ],
     ),
   );
+
+  Future<void> _toggleNotifications() async {
+    final newValue = !_pet.notificationsEnabled;
+    final vm = context.read<PetViewModel>();
+
+    // Optimistic update (actualizar UI inmediatamente)
+    setState(() {
+      _pet = _pet.copyWith(notificationsEnabled: newValue);
+    });
+
+    final success = await vm.togglePetNotifications(_pet.id, newValue);
+
+    if (!success && mounted) {
+      // Revertir si falló
+      setState(() {
+        _pet = _pet.copyWith(notificationsEnabled: !newValue);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(vm.error ?? 'Error al actualizar notificaciones'),
+          backgroundColor: Colors.red.shade600,
+        ),
+      );
+    }
+  }
 }

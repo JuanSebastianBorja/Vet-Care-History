@@ -43,16 +43,30 @@ class PetService {
   }
 
   Future<String> uploadPetPhoto(
-      String key, Uint8List bytes, String mimeType) async {
+    String key,
+    Uint8List bytes,
+    String mimeType,
+  ) async {
     final ext = mimeType.split('/').last;
     final path = '$key/${DateTime.now().millisecondsSinceEpoch}.$ext';
-    await _client.storage.from(AppConstants.petPhotoBucket).uploadBinary(
+    await _client.storage
+        .from(AppConstants.petPhotoBucket)
+        .uploadBinary(
           path,
           bytes,
           fileOptions: FileOptions(contentType: mimeType, upsert: true),
         );
-    return _client.storage
-        .from(AppConstants.petPhotoBucket)
-        .getPublicUrl(path);
+    return _client.storage.from(AppConstants.petPhotoBucket).getPublicUrl(path);
+  }
+
+  Future<PetModel> toggleNotifications(String petId, bool enabled) async {
+    final data = await _client
+        .from('pets')
+        .update({'notifications_enabled': enabled})
+        .eq('id', petId)
+        .select()
+        .single();
+
+    return PetModel.fromMap(data);
   }
 }
