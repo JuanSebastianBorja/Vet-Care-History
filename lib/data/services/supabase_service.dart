@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../models/user_model.dart';
 import '../../core/constants/app_constants.dart';
 
@@ -67,8 +68,53 @@ class SupabaseService {
     return null;
   }
 
+  // Login con Google
+  Future<UserModel?> signInWithGoogle() async {
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        scopes: ['email', 'profile'],
+      );
+
+      final googleUser = await googleSignIn.signIn();
+      if (googleUser == null) return null;
+
+      final googleAuth = await googleUser.authentication;
+      final idToken = googleAuth.idToken;
+      final accessToken = googleAuth.accessToken;
+
+      if (idToken == null) {
+        throw Exception('No se pudo obtener el token de Google');
+      }
+
+      final response = await _client.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+        accessToken: accessToken,
+      );
+
+      if (response.user != null) {
+        return UserModel(
+          id: response.user!.id,
+          email: response.user!.email!,
+          fullName: response.user!.userMetadata?['full_name']
+              ?? response.user!.userMetadata?['name'],
+          createdAt: DateTime.now(),
+        );
+      }
+    } on AuthException catch (e) {
+      throw Exception(e.message);
+    } catch (e) {
+      throw Exception('Error al iniciar sesión con Google: $e');
+    }
+    return null;
+  }
+
   // Cerrar sesión
   Future<void> signOut() async {
+    final googleSignIn = GoogleSignIn();
+    if (await googleSignIn.isSignedIn()) {
+      await googleSignIn.disconnect();
+    }
     await _client.auth.signOut();
   }
 

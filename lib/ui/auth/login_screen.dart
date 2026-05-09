@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../viewmodels/auth_viewmodel.dart';
@@ -38,6 +39,27 @@ class _LoginScreenState extends State<LoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(vm.error ?? 'Error al iniciar sesión'),
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
+    }
+  }
+
+  Future<void> _googleSignIn() async {
+    final vm = context.read<AuthViewModel>();
+    final ok = await vm.loginWithGoogle();
+    if (!mounted) return;
+    if (ok) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const PetListScreen()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(vm.error ?? 'Error al iniciar sesión con Google'),
           backgroundColor: Colors.red.shade600,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -175,6 +197,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     : const Text('Iniciar Sesión'),
               ),
             ),
+            const SizedBox(height: 16),
+            _buildDivider(),
+            const SizedBox(height: 16),
+            _buildGoogleButton(vm),
             const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -207,4 +233,94 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
+
+  Widget _buildDivider() {
+    return Row(
+      children: [
+        Expanded(child: Divider(color: Colors.grey.shade300)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Text(
+            'o continúa con',
+            style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+          ),
+        ),
+        Expanded(child: Divider(color: Colors.grey.shade300)),
+      ],
+    );
+  }
+
+  Widget _buildGoogleButton(AuthViewModel vm) {
+    return SizedBox(
+      height: 52,
+      child: OutlinedButton(
+        onPressed: vm.isLoading ? null : _googleSignIn,
+        style: OutlinedButton.styleFrom(
+          backgroundColor: Colors.white,
+          side: BorderSide(color: Colors.grey.shade300),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildGoogleIcon(),
+            const SizedBox(width: 12),
+            const Text(
+              'Continuar con Google',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGoogleIcon() {
+    return CustomPaint(
+      size: const Size(24, 24),
+      painter: GoogleIconPainter(),
+    );
+  }
+}
+
+class GoogleIconPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint();
+    final center = Offset(size.width / 2, size.height / 2);
+    const radius = 11.0;
+
+    // Blue top-right
+    paint.color = const Color(0xFF4285F4);
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -0.3, 1.8, false, paint,
+    );
+
+    // Red bottom-right
+    paint.color = const Color(0xFFEA4335);
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      1.5, 1.8, false, paint,
+    );
+
+    // Yellow bottom-left
+    paint.color = const Color(0xFFFBBC05);
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      3.3, 1.8, false, paint,
+    );
+
+    // Green top-left
+    paint.color = const Color(0xFF34A853);
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      5.1, 1.8, false, paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
