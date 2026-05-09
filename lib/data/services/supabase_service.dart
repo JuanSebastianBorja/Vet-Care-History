@@ -72,6 +72,7 @@ class SupabaseService {
   Future<UserModel?> signInWithGoogle() async {
     try {
       final GoogleSignIn googleSignIn = GoogleSignIn(
+        clientId: '130899851382-dpnihbtchi50vi48v94r9cfoten5r9dv.apps.googleusercontent.com',
         scopes: ['email', 'profile'],
       );
 
