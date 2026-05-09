@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
@@ -25,6 +26,7 @@ class NotificationService {
   /// Inicializa el servicio de notificaciones
   Future<void> init() async {
     if (_isInitialized) return;
+    if (kIsWeb) return;
 
     // Inicializar timezones
     tz.initializeTimeZones();
@@ -72,6 +74,7 @@ class NotificationService {
 
   /// Crea los canales de notificación para Android
   Future<void> _createChannels() async {
+    if (kIsWeb) return;
     const vaccineChannel = AndroidNotificationChannel(
       _vaccineChannelId,
       'Vacunas y Recordatorios',
@@ -105,6 +108,7 @@ class NotificationService {
 
   /// Solicita permisos necesarios
   Future<void> _requestPermissions() async {
+    if (kIsWeb) return;
     if (Platform.isAndroid) {
       // Android 13+ requiere permiso explícito de notificaciones
       await Permission.notification.request();
@@ -143,6 +147,7 @@ class NotificationService {
     required String channelId,
     String? payload,
   }) async {
+    if (kIsWeb) return;
     if (!_isInitialized) await init();
 
     // Cancelar cualquier notificación previa con el mismo ID para evitar duplicados
@@ -197,12 +202,14 @@ class NotificationService {
 
   /// Cancela una notificación específica por su ID
   Future<void> cancelNotification(int id) async {
+    if (kIsWeb) return;
     await _notifications.cancel(id);
     print('Notificación $id cancelada');
   }
 
   /// Cancela todas las notificaciones
   Future<void> cancelAllNotifications() async {
+    if (kIsWeb) return;
     await _notifications.cancelAll();
     print('Todas las notificaciones canceladas');
   }
