@@ -1,5 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:io' show Platform;
 import '../models/user_model.dart';
 import '../../core/constants/app_constants.dart';
 
@@ -71,10 +73,23 @@ class SupabaseService {
   // Login con Google
   Future<UserModel?> signInWithGoogle() async {
     try {
-      final GoogleSignIn googleSignIn = GoogleSignIn(
-        clientId: '130899851382-e06ukdg7ee0ssi757kkb3v3i21ffu7rs.apps.googleusercontent.com',
-        scopes: ['email', 'profile'],
-      );
+      GoogleSignIn googleSignIn;
+
+      if (kIsWeb) {
+        googleSignIn = GoogleSignIn(
+          clientId: '130899851382-e06ukdg7ee0ssi757kkb3v3i21ffu7rs.apps.googleusercontent.com',
+          scopes: ['email', 'profile'],
+        );
+      } else if (Platform.isIOS || Platform.isMacOS) {
+        googleSignIn = GoogleSignIn(
+          clientId: '130899851382-dpnihbtchi50vi48v94r9cfoten5r9dv.apps.googleusercontent.com',
+          scopes: ['email', 'profile'],
+        );
+      } else {
+        googleSignIn = GoogleSignIn(
+          scopes: ['email', 'profile'],
+        );
+      }
 
       final googleUser = await googleSignIn.signIn();
       if (googleUser == null) return null;
