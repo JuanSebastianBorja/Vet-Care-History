@@ -1,10 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
+import 'dart:async';
 import '../data/models/pet_model.dart';
-import '../data/services/pet_service.dart';
+import '../data/repositories/pet_repository.dart';
 
 class PetViewModel extends ChangeNotifier {
-  final PetService _service = PetService();
+  final PetRepository _repository = PetRepository();
+  StreamSubscription<int>? _pendingSyncSub;
 
   List<PetModel> _pets = [];
   List<PetModel> _filtered = [];
@@ -12,18 +14,33 @@ class PetViewModel extends ChangeNotifier {
   String? _error;
   String _searchQuery = '';
   String _speciesFilter = 'Todos';
+  int _pendingSyncCount = 0;
 
   List<PetModel> get pets => _filtered;
   bool get isLoading => _isLoading;
   String? get error => _error;
   String get speciesFilter => _speciesFilter;
+  int get pendingSyncCount => _pendingSyncCount;
+
+  PetViewModel() {
+    _pendingSyncSub = _repository.watchPendingSyncCount().listen((count) {
+      _pendingSyncCount = count;
+      notifyListeners();
+    });
+  }
+
+  @override
+  void dispose() {
+    _pendingSyncSub?.cancel();
+    super.dispose();
+  }
 
   Future<void> loadPets(String userId) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
     try {
-      _pets = await _service.fetchPets(userId);
+      _pets = await _repository.fetchPets(userId);
       _applyFilters();
     } catch (e) {
       _error = e.toString().replaceAll('Exception: ', '');
@@ -65,14 +82,14 @@ class PetViewModel extends ChangeNotifier {
       if (photo != null) {
         final bytes = await photo.readAsBytes();
         final mime = photo.mimeType ?? 'image/jpeg';
-        final url = await _service.uploadPetPhoto(
+        final url = await _repository.uploadPetPhoto(
           'tmp_${DateTime.now().millisecondsSinceEpoch}',
           bytes,
           mime,
         );
         petToSave = pet.copyWith(photoUrl: url);
       }
-      final saved = await _service.addPet(petToSave);
+      final saved = await _repository.addPet(petToSave);
       _pets.add(saved);
       _applyFilters();
       _isLoading = false;
@@ -95,10 +112,10 @@ class PetViewModel extends ChangeNotifier {
       if (newPhoto != null) {
         final bytes = await newPhoto.readAsBytes();
         final mime = newPhoto.mimeType ?? 'image/jpeg';
-        final url = await _service.uploadPetPhoto(pet.id, bytes, mime);
+        final url = await _repository.uploadPetPhoto(pet.id, bytes, mime);
         petToSave = pet.copyWith(photoUrl: url);
       }
-      final updated = await _service.updatePet(petToSave);
+      final updated = await _repository.updatePet(petToSave);
       final idx = _pets.indexWhere((p) => p.id == pet.id);
       if (idx != -1) _pets[idx] = updated;
       _applyFilters();
@@ -118,7 +135,7 @@ class PetViewModel extends ChangeNotifier {
     _error = null;
     notifyListeners();
     try {
-      await _service.deletePet(petId);
+      await _repository.deletePet(petId);
       _pets.removeWhere((p) => p.id == petId);
       _applyFilters();
       _isLoading = false;
@@ -139,7 +156,7 @@ class PetViewModel extends ChangeNotifier {
 
   Future<bool> togglePetNotifications(String petId, bool enabled) async {
     try {
-      final updatedPet = await _service.toggleNotifications(petId, enabled);
+      final updatedPet = await _repository.toggleNotifications(petId, enabled);
 
       // Actualizar la lista local
       final index = _pets.indexWhere((p) => p.id == petId);

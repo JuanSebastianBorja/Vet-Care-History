@@ -23,34 +23,35 @@ class DewormingModel {
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
   factory DewormingModel.fromMap(Map<String, dynamic> map) => DewormingModel(
-        id: map['id'] as String,
-        petId: map['pet_id'] as String,
-        product: map['product'] as String,
-        dose: map['dose'] as String?,
-        route: map['route'] as String?,
-        applicationDate: DateTime.parse(map['application_date'] as String),
-        nextDueDate: map['next_due_date'] != null
-            ? DateTime.parse(map['next_due_date'] as String)
-            : null,
-        createdAt: DateTime.parse(map['created_at'] as String),
-      );
+    id: map['id'] as String,
+    petId: map['pet_id'] as String,
+    product: map['product'] as String,
+    dose: map['dose'] as String?,
+    route: map['route'] as String?,
+    applicationDate: DateTime.parse(map['application_date'] as String),
+    nextDueDate: map['next_due_date'] != null
+        ? DateTime.parse(map['next_due_date'] as String)
+        : null,
+    createdAt: DateTime.parse(map['created_at'] as String),
+  );
 
   Map<String, dynamic> toInsertMap() => {
-        'pet_id': petId,
-        'product': product,
-        if (dose != null && dose!.isNotEmpty) 'dose': dose,
-        if (route != null && route!.isNotEmpty) 'route': route,
-        'application_date': _toIsoDate(applicationDate),
-        if (nextDueDate != null) 'next_due_date': _toIsoDate(nextDueDate!),
-      };
+    if (id.isNotEmpty) 'id': id,
+    'pet_id': petId,
+    'product': product,
+    if (dose != null && dose!.isNotEmpty) 'dose': dose,
+    if (route != null && route!.isNotEmpty) 'route': route,
+    'application_date': _toIsoDate(applicationDate),
+    if (nextDueDate != null) 'next_due_date': _toIsoDate(nextDueDate!),
+  };
 
   Map<String, dynamic> toUpdateMap() => {
-        'product': product,
-        'dose': dose?.isNotEmpty == true ? dose : null,
-        'route': route?.isNotEmpty == true ? route : null,
-        'application_date': _toIsoDate(applicationDate),
-        'next_due_date': nextDueDate != null ? _toIsoDate(nextDueDate!) : null,
-      };
+    'product': product,
+    'dose': dose?.isNotEmpty == true ? dose : null,
+    'route': route?.isNotEmpty == true ? route : null,
+    'application_date': _toIsoDate(applicationDate),
+    'next_due_date': nextDueDate != null ? _toIsoDate(nextDueDate!) : null,
+  };
 
   bool get isOverdue =>
       nextDueDate != null && nextDueDate!.isBefore(DateTime.now());
@@ -68,6 +69,8 @@ class DewormingModel {
       if (dose != null && dose!.isNotEmpty) dose!,
       if (route != null && route!.isNotEmpty) route!,
     ];
-    return parts.isEmpty ? applicationDateStr : '${parts.join(' · ')} · $applicationDateStr';
+    return parts.isEmpty
+        ? applicationDateStr
+        : '${parts.join(' · ')} · $applicationDateStr';
   }
 }

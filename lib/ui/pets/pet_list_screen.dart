@@ -48,8 +48,7 @@ class _PetListScreenState extends State<PetListScreen> {
   Widget build(BuildContext context) {
     final authVm = context.watch<AuthViewModel>();
     final petVm = context.watch<PetViewModel>();
-    final firstName =
-        authVm.user?.fullName?.split(' ').first ?? 'Veterinario';
+    final firstName = authVm.user?.fullName?.split(' ').first ?? 'Veterinario';
 
     return Scaffold(
       body: CustomScrollView(
@@ -82,6 +81,43 @@ class _PetListScreenState extends State<PetListScreen> {
               onSelect: petVm.setSpeciesFilter,
             ),
           ),
+          if (petVm.pendingSyncCount > 0)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 6, 16, 4),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF8E1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFFFE082)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.sync_problem_outlined,
+                        size: 18,
+                        color: Color(0xFF8D6E63),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '${petVm.pendingSyncCount} cambio(s) pendiente(s) de sincronizar',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF5D4037),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           if (petVm.isLoading)
             const SliverFillRemaining(
               child: Center(
@@ -242,11 +278,7 @@ class _EmptyState extends StatelessWidget {
                 color: const Color(0xFFE8F5E9),
                 borderRadius: BorderRadius.circular(60),
               ),
-              child: const Icon(
-                Icons.pets,
-                size: 60,
-                color: Color(0xFF2E7D32),
-              ),
+              child: const Icon(Icons.pets, size: 60, color: Color(0xFF2E7D32)),
             ),
             const SizedBox(height: 24),
             const Text(
@@ -332,10 +364,7 @@ class _PetCard extends StatelessWidget {
         loadingBuilder: (_, child, progress) => progress == null
             ? child
             : Center(
-                child: CircularProgressIndicator(
-                  color: color,
-                  strokeWidth: 2,
-                ),
+                child: CircularProgressIndicator(color: color, strokeWidth: 2),
               ),
       );
     }

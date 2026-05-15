@@ -123,6 +123,10 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
               child: Column(
                 children: [
                   _buildStatRow(),
+                  if (histVm.pendingSyncCount > 0) ...[
+                    const SizedBox(height: 12),
+                    _buildSyncBanner(histVm.pendingSyncCount),
+                  ],
                   const SizedBox(height: 20),
                   if (histVm.isLoading)
                     const Padding(
@@ -327,6 +331,38 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
         ),
       );
 
+  Widget _buildSyncBanner(int pendingCount) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF8E1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFFFE082)),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.sync_problem_outlined,
+            size: 18,
+            color: Color(0xFF8D6E63),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '$pendingCount cambio(s) pendiente(s) de sincronizar',
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF5D4037),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildConsultationSection(HistoryViewModel vm) {
     return Card(
       child: ExpansionTile(
@@ -368,6 +404,8 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
   }
 
   Widget _consultationTile(ConsultationModel c, HistoryViewModel vm) {
+    final hasPendingPhotos = vm.hasPendingConsultationPhotos(c.id);
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
       child: Card(
@@ -482,6 +520,39 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                         ),
                       ),
                     ),
+                  ),
+                ),
+              ],
+              if (hasPendingPhotos) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF8E1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFFFE082)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.cloud_upload_outlined,
+                        size: 12,
+                        color: Color(0xFF8D6E63),
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        'Fotos pendientes de sincronizar',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF5D4037),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],

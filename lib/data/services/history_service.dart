@@ -24,13 +24,18 @@ class HistoryService {
   }
 
   Future<ConsultationModel> addConsultation(
-      ConsultationModel c, List<XFile> photos) async {
+    ConsultationModel c,
+    List<XFile> photos,
+  ) async {
     final data = await _client
         .from('consultations')
         .insert(c.toInsertMap())
         .select()
         .single();
-    final saved = ConsultationModel.fromMap({...data, 'consultation_photos': []});
+    final saved = ConsultationModel.fromMap({
+      ...data,
+      'consultation_photos': [],
+    });
 
     final List<ConsultationPhotoModel> uploadedPhotos = [];
     for (final photo in photos) {
@@ -47,13 +52,11 @@ class HistoryService {
   }
 
   Future<ConsultationModel> updateConsultation(
-      ConsultationModel c,
-      List<XFile> newPhotos,
-      List<String> photoIdsToDelete) async {
-    await _client
-        .from('consultations')
-        .update(c.toUpdateMap())
-        .eq('id', c.id);
+    ConsultationModel c,
+    List<XFile> newPhotos,
+    List<String> photoIdsToDelete,
+  ) async {
+    await _client.from('consultations').update(c.toUpdateMap()).eq('id', c.id);
 
     for (final id in photoIdsToDelete) {
       await _client.from('consultation_photos').delete().eq('id', id);
@@ -70,8 +73,9 @@ class HistoryService {
       addedPhotos.add(ConsultationPhotoModel.fromMap(photoData));
     }
 
-    final remaining =
-        c.photos.where((p) => !photoIdsToDelete.contains(p.id)).toList();
+    final remaining = c.photos
+        .where((p) => !photoIdsToDelete.contains(p.id))
+        .toList();
     return c.copyWith(photos: [...remaining, ...addedPhotos]);
   }
 
@@ -80,7 +84,9 @@ class HistoryService {
   }
 
   Future<String> _uploadConsultationPhoto(
-      String consultationId, XFile photo) async {
+    String consultationId,
+    XFile photo,
+  ) async {
     final bytes = await photo.readAsBytes();
     final mime = photo.mimeType ?? 'image/jpeg';
     final ext = mime.split('/').last;
@@ -88,11 +94,36 @@ class HistoryService {
         '$consultationId/${DateTime.now().millisecondsSinceEpoch}.$ext';
     await _client.storage
         .from(AppConstants.examPhotoBucket)
-        .uploadBinary(path, bytes,
-            fileOptions: FileOptions(contentType: mime, upsert: true));
+        .uploadBinary(
+          path,
+          bytes,
+          fileOptions: FileOptions(contentType: mime, upsert: true),
+        );
     return _client.storage
         .from(AppConstants.examPhotoBucket)
         .getPublicUrl(path);
+  }
+
+  Future<String> uploadConsultationPhoto(String consultationId, XFile photo) {
+    return _uploadConsultationPhoto(consultationId, photo);
+  }
+
+  Future<ConsultationPhotoModel> createConsultationPhotoRecord({
+    required String consultationId,
+    required String photoUrl,
+    String? description,
+  }) async {
+    final data = await _client
+        .from('consultation_photos')
+        .insert({
+          'consultation_id': consultationId,
+          'photo_url': photoUrl,
+          if (description != null && description.isNotEmpty)
+            'description': description,
+        })
+        .select()
+        .single();
+    return ConsultationPhotoModel.fromMap(data);
   }
 
   Future<List<VaccineModel>> fetchVaccines(String petId) async {
@@ -101,9 +132,7 @@ class HistoryService {
         .select()
         .eq('pet_id', petId)
         .order('application_date', ascending: false);
-    return (data as List<dynamic>)
-        .map((e) => VaccineModel.fromMap(e))
-        .toList();
+    return (data as List<dynamic>).map((e) => VaccineModel.fromMap(e)).toList();
   }
 
   Future<VaccineModel> addVaccine(VaccineModel v) async {

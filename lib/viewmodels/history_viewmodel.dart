@@ -1,26 +1,55 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import '../data/models/consultation_model.dart';
 import '../data/models/vaccine_model.dart';
 import '../data/models/deworming_model.dart';
-import '../data/services/history_service.dart';
+import '../data/local/app_database.dart';
+import '../data/repositories/consultation_repository.dart';
+import '../data/repositories/vaccine_repository.dart';
+import '../data/repositories/deworming_repository.dart';
 import '../data/services/notification_service.dart';
 
 class HistoryViewModel extends ChangeNotifier {
-  final HistoryService _service = HistoryService();
+  final AppDatabase _localDb = AppDatabase();
+  final ConsultationRepository _consultationRepository =
+      ConsultationRepository();
+  final VaccineRepository _vaccineRepository = VaccineRepository();
+  final DewormingRepository _dewormingRepository = DewormingRepository();
   final NotificationService _notifService = NotificationService();
+  StreamSubscription<int>? _pendingSyncSub;
 
   List<ConsultationModel> _consultations = [];
   List<VaccineModel> _vaccines = [];
   List<DewormingModel> _dewormings = [];
+  Set<String> _consultationIdsWithPendingPhotos = {};
   bool _isLoading = false;
   String? _error;
+  int _pendingSyncCount = 0;
 
   List<ConsultationModel> get consultations => _consultations;
   List<VaccineModel> get vaccines => _vaccines;
   List<DewormingModel> get dewormings => _dewormings;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  int get pendingSyncCount => _pendingSyncCount;
+  bool hasPendingConsultationPhotos(String consultationId) =>
+      _consultationIdsWithPendingPhotos.contains(consultationId);
+
+  HistoryViewModel() {
+    _pendingSyncSub = _localDb.watchPendingSyncCount().listen((count) {
+      _pendingSyncCount = count;
+      notifyListeners();
+    });
+  }
+
+  @override
+  void dispose() {
+    _pendingSyncSub?.cancel();
+    _localDb.close();
+    super.dispose();
+  }
 
   Future<void> loadForPet(String petId) async {
     _isLoading = true;
@@ -28,13 +57,15 @@ class HistoryViewModel extends ChangeNotifier {
     notifyListeners();
     try {
       final results = await Future.wait([
-        _service.fetchConsultations(petId),
-        _service.fetchVaccines(petId),
-        _service.fetchDewormings(petId),
+        _consultationRepository.fetchConsultations(petId),
+        _vaccineRepository.fetchVaccines(petId),
+        _dewormingRepository.fetchDewormings(petId),
       ]);
       _consultations = results[0] as List<ConsultationModel>;
       _vaccines = results[1] as List<VaccineModel>;
       _dewormings = results[2] as List<DewormingModel>;
+      _consultationIdsWithPendingPhotos = await _consultationRepository
+          .getConsultationIdsWithPendingPhotosForPet(petId);
     } catch (e) {
       _error = e.toString().replaceAll('Exception: ', '');
     }
@@ -45,8 +76,9 @@ class HistoryViewModel extends ChangeNotifier {
   Future<bool> addConsultation(ConsultationModel c, List<XFile> photos) async {
     _error = null;
     try {
-      final saved = await _service.addConsultation(c, photos);
+      final saved = await _consultationRepository.addConsultation(c, photos);
       _consultations.insert(0, saved);
+      await _refreshPendingPhotosForPet(c.petId);
       notifyListeners();
       return true;
     } catch (e) {
@@ -63,13 +95,14 @@ class HistoryViewModel extends ChangeNotifier {
   ) async {
     _error = null;
     try {
-      final updated = await _service.updateConsultation(
+      final updated = await _consultationRepository.updateConsultation(
         c,
         newPhotos,
         photoIdsToDelete,
       );
       final idx = _consultations.indexWhere((x) => x.id == c.id);
       if (idx != -1) _consultations[idx] = updated;
+      await _refreshPendingPhotosForPet(c.petId);
       notifyListeners();
       return true;
     } catch (e) {
@@ -82,8 +115,21 @@ class HistoryViewModel extends ChangeNotifier {
   Future<bool> deleteConsultation(String id) async {
     _error = null;
     try {
-      await _service.deleteConsultation(id);
+      final target = _consultations.firstWhere(
+        (x) => x.id == id,
+        orElse: () => ConsultationModel(
+          id: '',
+          petId: '',
+          visitDate: DateTime.now(),
+          motive: '',
+          createdAt: DateTime.now(),
+        ),
+      );
+      await _consultationRepository.deleteConsultation(id);
       _consultations.removeWhere((c) => c.id == id);
+      if (target.petId.isNotEmpty) {
+        await _refreshPendingPhotosForPet(target.petId);
+      }
       notifyListeners();
       return true;
     } catch (e) {
@@ -98,7 +144,7 @@ class HistoryViewModel extends ChangeNotifier {
   Future<bool> addVaccine(VaccineModel v, String petName) async {
     _error = null;
     try {
-      final saved = await _service.addVaccine(v);
+      final saved = await _vaccineRepository.addVaccine(v);
       _vaccines.insert(0, saved);
 
       // Programar notificación
@@ -118,13 +164,7 @@ class HistoryViewModel extends ChangeNotifier {
   Future<bool> updateVaccine(VaccineModel v, String petName) async {
     _error = null;
     try {
-      // Buscar el registro anterior para comparar fechas o cancelar
-      final oldRecord = _vaccines.firstWhere(
-        (x) => x.id == v.id,
-        orElse: () => v,
-      );
-
-      final updated = await _service.updateVaccine(v);
+      final updated = await _vaccineRepository.updateVaccine(v);
       final idx = _vaccines.indexWhere((x) => x.id == v.id);
       if (idx != -1) _vaccines[idx] = updated;
 
@@ -154,7 +194,7 @@ class HistoryViewModel extends ChangeNotifier {
         NotificationService.generateNotificationId('vaccine', id),
       );
 
-      await _service.deleteVaccine(id);
+      await _vaccineRepository.deleteVaccine(id);
       _vaccines.removeWhere((v) => v.id == id);
       notifyListeners();
       return true;
@@ -170,7 +210,7 @@ class HistoryViewModel extends ChangeNotifier {
   Future<bool> addDeworming(DewormingModel d, String petName) async {
     _error = null;
     try {
-      final saved = await _service.addDeworming(d);
+      final saved = await _dewormingRepository.addDeworming(d);
       _dewormings.insert(0, saved);
 
       if (saved.nextDueDate != null) {
@@ -189,7 +229,7 @@ class HistoryViewModel extends ChangeNotifier {
   Future<bool> updateDeworming(DewormingModel d, String petName) async {
     _error = null;
     try {
-      final updated = await _service.updateDeworming(d);
+      final updated = await _dewormingRepository.updateDeworming(d);
       final idx = _dewormings.indexWhere((x) => x.id == d.id);
       if (idx != -1) _dewormings[idx] = updated;
 
@@ -216,7 +256,7 @@ class HistoryViewModel extends ChangeNotifier {
         NotificationService.generateNotificationId('deworming', id),
       );
 
-      await _service.deleteDeworming(id);
+      await _dewormingRepository.deleteDeworming(id);
       _dewormings.removeWhere((d) => d.id == id);
       notifyListeners();
       return true;
@@ -291,7 +331,13 @@ class HistoryViewModel extends ChangeNotifier {
     _consultations = [];
     _vaccines = [];
     _dewormings = [];
+    _consultationIdsWithPendingPhotos = {};
     _error = null;
     notifyListeners();
+  }
+
+  Future<void> _refreshPendingPhotosForPet(String petId) async {
+    _consultationIdsWithPendingPhotos = await _consultationRepository
+        .getConsultationIdsWithPendingPhotosForPet(petId);
   }
 }
