@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -73,23 +74,20 @@ class SupabaseService {
   // Login con Google
   Future<UserModel?> signInWithGoogle() async {
     try {
-      GoogleSignIn googleSignIn;
+      final String? iosClientId = AppConstants.googleIosClientId.isNotEmpty
+          ? AppConstants.googleIosClientId
+          : null;
 
-      if (kIsWeb) {
-        googleSignIn = GoogleSignIn(
-          clientId: '130899851382-e06ukdg7ee0ssi757kkb3v3i21ffu7rs.apps.googleusercontent.com',
-          scopes: ['email', 'profile'],
-        );
-      } else if (Platform.isIOS || Platform.isMacOS) {
-        googleSignIn = GoogleSignIn(
-          clientId: '130899851382-dpnihbtchi50vi48v94r9cfoten5r9dv.apps.googleusercontent.com',
-          scopes: ['email', 'profile'],
-        );
-      } else {
-        googleSignIn = GoogleSignIn(
-          scopes: ['email', 'profile'],
-        );
-      }
+      final googleSignIn = GoogleSignIn(
+        scopes: const ['email', 'profile'],
+        clientId: kIsWeb
+            ? AppConstants.googleWebClientId
+            : (Platform.isIOS || Platform.isMacOS ? iosClientId : null),
+        serverClientId: kIsWeb ? null : AppConstants.googleWebClientId,
+      );
+
+      // Limpia estado anterior para evitar bloqueos silenciosos del flujo.
+      await googleSignIn.signOut();
 
       final googleUser = await googleSignIn.signIn();
       if (googleUser == null) return null;
@@ -99,7 +97,9 @@ class SupabaseService {
       final accessToken = googleAuth.accessToken;
 
       if (idToken == null) {
-        throw Exception('No se pudo obtener el token de Google');
+        throw Exception(
+          'No se pudo obtener idToken de Google. Verifica Web Client ID y SHA-1 en Google Cloud.',
+        );
       }
 
       final response = await _client.auth.signInWithIdToken(
@@ -112,8 +112,9 @@ class SupabaseService {
         return UserModel(
           id: response.user!.id,
           email: response.user!.email!,
-          fullName: response.user!.userMetadata?['full_name']
-              ?? response.user!.userMetadata?['name'],
+          fullName:
+              response.user!.userMetadata?['full_name'] ??
+              response.user!.userMetadata?['name'],
           createdAt: DateTime.now(),
         );
       }
@@ -125,9 +126,61 @@ class SupabaseService {
     return null;
   }
 
+  // Login con GitHub
+  Future<UserModel?> signInWithGithub() async {
+    try {
+      final launched = await _client.auth.signInWithOAuth(
+        OAuthProvider.github,
+        redirectTo: kIsWeb ? null : AppConstants.oauthRedirectUri,
+      );
+
+      if (!launched) {
+        throw Exception('No se pudo abrir el navegador para GitHub.');
+      }
+
+      final authState = await _client.auth.onAuthStateChange
+          .firstWhere((data) => data.session != null)
+          .timeout(
+            const Duration(minutes: 2),
+            onTimeout: () {
+              throw TimeoutException(
+                'Timeout esperando autenticación con GitHub',
+              );
+            },
+          );
+
+      final user = authState.session?.user ?? _client.auth.currentUser;
+      if (user == null) {
+        throw Exception('No se pudo completar el inicio de sesión con GitHub.');
+      }
+
+      return UserModel(
+        id: user.id,
+        email: user.email ?? '',
+        fullName:
+            user.userMetadata?['full_name'] ??
+            user.userMetadata?['name'] ??
+            user.userMetadata?['login'],
+        avatarUrl: user.userMetadata?['avatar_url'],
+        createdAt: DateTime.now(),
+      );
+    } on AuthException catch (e) {
+      throw Exception(e.message);
+    } on TimeoutException {
+      throw Exception(
+        'El inicio de sesión con GitHub tardó demasiado. Intenta de nuevo.',
+      );
+    } catch (e) {
+      throw Exception('Error al iniciar sesión con GitHub: $e');
+    }
+  }
+
   // Cerrar sesión
   Future<void> signOut() async {
-    final googleSignIn = GoogleSignIn();
+    final googleSignIn = GoogleSignIn(
+      scopes: const ['email', 'profile'],
+      serverClientId: AppConstants.googleWebClientId,
+    );
     if (await googleSignIn.isSignedIn()) {
       await googleSignIn.disconnect();
     }

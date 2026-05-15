@@ -74,6 +74,7 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>com.googleusercontent.apps.130899851382-dpnihbtchi50vi48v94r9cfoten5r9dv</string>
+				<string>vetcare</string>
 			</array>
 		</dict>
 	</array>

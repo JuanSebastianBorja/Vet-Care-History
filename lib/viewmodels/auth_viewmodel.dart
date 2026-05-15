@@ -98,6 +98,28 @@ class AuthViewModel extends ChangeNotifier {
     return false;
   }
 
+  // Login con GitHub
+  Future<bool> loginWithGithub() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      _user = await _supabase.signInWithGithub();
+      if (_user != null) {
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      }
+    } catch (e) {
+      _error = e.toString().replaceAll('Exception: ', '');
+    }
+
+    _isLoading = false;
+    notifyListeners();
+    return false;
+  }
+
   // Cerrar sesión
   Future<void> logout() async {
     await _supabase.signOut();
