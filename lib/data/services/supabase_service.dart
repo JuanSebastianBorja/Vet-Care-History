@@ -45,7 +45,6 @@ class SupabaseService {
     return null;
   }
 
-  // Login
   Future<UserModel?> signIn(String email, String password) async {
     try {
       final response = await _client.auth.signInWithPassword(
@@ -58,6 +57,7 @@ class SupabaseService {
           id: response.user!.id,
           email: response.user!.email!,
           fullName: response.user!.userMetadata?['full_name'],
+          avatarUrl: response.user!.userMetadata?['avatar_url'],
           createdAt: DateTime.now(),
         );
       }
@@ -67,12 +67,40 @@ class SupabaseService {
     return null;
   }
 
-  // Cerrar sesión
   Future<void> signOut() async {
     await _client.auth.signOut();
   }
 
-  //  Verificar sesión activa
+  Future<String> uploadAvatar(String userId, Uint8List bytes, String mimeType) async {
+    final ext = mimeType.split('/').last;
+    final path = '$userId/avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
+    await _client.storage.from(AppConstants.avatarBucket).uploadBinary(
+          path,
+          bytes,
+          fileOptions: FileOptions(contentType: mimeType, upsert: true),
+        );
+    return _client.storage.from(AppConstants.avatarBucket).getPublicUrl(path);
+  }
+
+  Future<UserModel> updateProfile({required String fullName, String? avatarUrl}) async {
+    final response = await _client.auth.updateUser(
+      UserAttributes(
+        data: {
+          'full_name': fullName,
+          if (avatarUrl != null) 'avatar_url': avatarUrl,
+        },
+      ),
+    );
+    final user = response.user!;
+    return UserModel(
+      id: user.id,
+      email: user.email!,
+      fullName: user.userMetadata?['full_name'],
+      avatarUrl: user.userMetadata?['avatar_url'],
+      createdAt: DateTime.now(),
+    );
+  }
+
   User? get currentUser => _client.auth.currentUser;
 
   bool get isSignedIn => currentUser != null;

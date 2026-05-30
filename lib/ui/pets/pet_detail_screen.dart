@@ -4,12 +4,15 @@ import '../../data/models/consultation_model.dart';
 import '../../data/models/deworming_model.dart';
 import '../../data/models/pet_model.dart';
 import '../../data/models/vaccine_model.dart';
+import '../../data/models/appointment_model.dart';
+import '../../data/services/clinical_report_service.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/history_viewmodel.dart';
 import '../../viewmodels/pet_viewmodel.dart';
 import '../consultations/consultation_form_screen.dart';
 import '../dewormings/deworming_form_screen.dart';
 import '../vaccines/vaccine_form_screen.dart';
+import '../appointments/appointment_form_screen.dart';
 import 'pet_form_screen.dart';
 
 class PetDetailScreen extends StatefulWidget {
@@ -61,7 +64,7 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Eliminar mascota'),
         content:
-            Text('¿Eliminar a ${_pet.name}? Se borrará todo su historial.'),
+            Text('¿Eliminar a ${_pet.name}? Se borrara todo su historial.'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
@@ -88,7 +91,7 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text('Eliminar $label'),
-        content: Text('¿Eliminar este registro? Esta acción no se puede deshacer.'),
+        content: const Text('¿Eliminar este registro? Esta accion no se puede deshacer.'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
@@ -104,6 +107,225 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
         ],
       ),
     );
+  }
+
+  void _showReportDialog() {
+    DateTime? startDate;
+    DateTime? endDate;
+
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setStateDialog) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Row(
+            children: [
+              Icon(Icons.picture_as_pdf_rounded, color: Color(0xFF2E7D32)),
+              SizedBox(width: 10),
+              Text('Generar Reporte'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Selecciona un rango de fechas. Si no seleccionas ninguno, se incluira todo el historial completo.',
+                style: TextStyle(fontSize: 13, color: Colors.black87),
+              ),
+              const SizedBox(height: 20),
+              _dateRow(
+                context: context,
+                label: 'Fecha Inicio:',
+                date: startDate,
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: startDate ?? DateTime.now(),
+                    firstDate: DateTime(1990),
+                    lastDate: DateTime.now().add(const Duration(days: 365)),
+                  );
+                  if (picked != null) {
+                    setStateDialog(() => startDate = picked);
+                  }
+                },
+                onClear: () => setStateDialog(() => startDate = null),
+              ),
+              const SizedBox(height: 12),
+              _dateRow(
+                context: context,
+                label: 'Fecha Fin:',
+                date: endDate,
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: endDate ?? DateTime.now(),
+                    firstDate: DateTime(1990),
+                    lastDate: DateTime.now().add(const Duration(days: 365)),
+                  );
+                  if (picked != null) {
+                    setStateDialog(() => endDate = picked);
+                  }
+                },
+                onClear: () => setStateDialog(() => endDate = null),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(ctx);
+                await _generateReport(startDate, endDate);
+              },
+              child: const Text('Confirmar'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _dateRow({
+    required BuildContext context,
+    required String label,
+    required DateTime? date,
+    required VoidCallback onTap,
+    required VoidCallback onClear,
+  }) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 90,
+          child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+        ),
+        Expanded(
+          child: GestureDetector(
+            onTap: onTap,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F5F5),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      date != null
+                          ? '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}'
+                          : 'Seleccionar...',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: date != null ? Colors.black87 : Colors.grey,
+                      ),
+                    ),
+                  ),
+                  if (date != null)
+                    GestureDetector(
+                      onTap: onClear,
+                      child: const Icon(Icons.clear, size: 16, color: Colors.grey),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _generateReport(DateTime? start, DateTime? end) async {
+    final histVm = context.read<HistoryViewModel>();
+
+    final cFilter = histVm.consultations.where((c) {
+      if (start != null && c.visitDate.isBefore(start)) return false;
+      if (end != null && c.visitDate.isAfter(end)) return false;
+      return true;
+    }).toList();
+
+    final vFilter = histVm.vaccines.where((v) {
+      if (start != null && v.applicationDate.isBefore(start)) return false;
+      if (end != null && v.applicationDate.isAfter(end)) return false;
+      return true;
+    }).toList();
+
+    final dFilter = histVm.dewormings.where((d) {
+      if (start != null && d.applicationDate.isBefore(start)) return false;
+      if (end != null && d.applicationDate.isAfter(end)) return false;
+      return true;
+    }).toList();
+
+    if (cFilter.isEmpty && vFilter.isEmpty && dFilter.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('No hay registros en este periodo.'),
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
+      return;
+    }
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(color: Color(0xFF2E7D32)),
+                SizedBox(height: 16),
+                Text('Generando reporte clinico...', style: TextStyle(fontWeight: FontWeight.w600)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      final path = await ClinicalReportService.generateAndSaveReport(
+        pet: _pet,
+        consultations: histVm.consultations,
+        vaccines: histVm.vaccines,
+        dewormings: histVm.dewormings,
+        startDate: start,
+        endDate: end,
+      );
+
+      if (!mounted) return;
+      Navigator.pop(context);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Reporte guardado en Descargas: ${path.split(RegExp(r'[\\/]')).last}'),
+          backgroundColor: const Color(0xFF2E7D32),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 5),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al generar el reporte: ${e.toString()}'),
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
+    }
   }
 
   @override
@@ -128,6 +350,8 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                           color: Color(0xFF2E7D32)),
                     )
                   else ...[
+                    _buildAppointmentSection(histVm),
+                    const SizedBox(height: 12),
                     _buildConsultationSection(histVm),
                     const SizedBox(height: 12),
                     _buildVaccineSection(histVm),
@@ -172,6 +396,13 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
             color: Colors.white),
         onPressed: () => Navigator.pop(context),
       ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.picture_as_pdf_outlined, color: Colors.white),
+          tooltip: 'Generar reporte clinico',
+          onPressed: _showReportDialog,
+        ),
+      ],
       flexibleSpace: FlexibleSpaceBar(
         background: Stack(
           fit: StackFit.expand,
@@ -297,6 +528,199 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
           ),
         ),
       );
+
+  Widget _buildAppointmentSection(HistoryViewModel vm) {
+    return Card(
+      child: ExpansionTile(
+        leading: Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+              color: const Color(0xFF2E7D32).withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10)),
+          child: const Icon(Icons.calendar_month_outlined,
+              color: Color(0xFF2E7D32), size: 20),
+        ),
+        title: Text(
+            'Citas Veterinarias (${vm.appointments.length})',
+            style: const TextStyle(
+                fontWeight: FontWeight.w600, fontSize: 15)),
+        children: [
+          _addButton('Agregar cita', const Color(0xFF2E7D32), () async {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) =>
+                      AppointmentFormScreen(petId: _pet.id)),
+            );
+            _reload();
+          }),
+          if (vm.appointments.isEmpty)
+            _emptyState(Icons.calendar_month_outlined)
+          else
+            ...vm.appointments.map((a) => _appointmentTile(a, vm)),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
+  Widget _appointmentTile(AppointmentModel a, HistoryViewModel vm) {
+    final isPast = a.appointmentDate.isBefore(DateTime.now());
+    final isPending = a.status == 'pending';
+
+    Color statusColor;
+    if (a.status == 'completed') {
+      statusColor = const Color(0xFF2E7D32);
+    } else if (a.status == 'cancelled') {
+      statusColor = Colors.grey.shade600;
+    } else {
+      statusColor = const Color(0xFF1565C0);
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+      child: Card(
+        color: const Color(0xFFFAFAFA),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      a.motive,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: statusColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      a.statusLabel,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: statusColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Icon(Icons.calendar_today_rounded, size: 12, color: Colors.grey.shade500),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${a.dateStr} a las ${a.timeStr}',
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  ),
+                ],
+              ),
+              if (a.vetName != null) ...[
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(Icons.person_outline_rounded, size: 12, color: Colors.grey.shade500),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Veterinario: ${a.vetName}',
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                    ),
+                  ],
+                ),
+              ],
+              if (a.notes != null) ...[
+                const SizedBox(height: 4),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.notes_rounded, size: 12, color: Colors.grey.shade500),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        a.notes!,
+                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              if (isPast && isPending) ...[
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () async {
+                          await vm.updateAppointment(a.copyWith(status: 'completed'));
+                        },
+                        icon: const Icon(Icons.check_rounded, size: 14, color: Color(0xFF2E7D32)),
+                        label: const Text('Completar', style: TextStyle(fontSize: 11, color: Color(0xFF2E7D32))),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFF2E7D32)),
+                          padding: EdgeInsets.zero,
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () async {
+                          await vm.updateAppointment(a.copyWith(status: 'cancelled'));
+                        },
+                        icon: const Icon(Icons.close_rounded, size: 14, color: Colors.grey),
+                        label: const Text('Cancelar', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.grey),
+                          padding: EdgeInsets.zero,
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF2E7D32)),
+                    onPressed: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => AppointmentFormScreen(petId: _pet.id, appointment: a),
+                        ),
+                      );
+                      _reload();
+                    },
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.delete_outline, size: 18, color: Colors.red.shade400),
+                    onPressed: () => _confirmDelete(
+                      'cita',
+                      () => vm.deleteAppointment(a.id),
+                    ),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _buildConsultationSection(HistoryViewModel vm) {
     return Card(
@@ -538,7 +962,7 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                   style: const TextStyle(fontSize: 12)),
               Row(
                 children: [
-                  Text('Próxima: ${v.nextDueDateStr}',
+                  Text('Proxima: ${v.nextDueDateStr}',
                       style: TextStyle(fontSize: 12, color: dueColor)),
                   if (overdue) ...[
                     const SizedBox(width: 4),
@@ -566,7 +990,7 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
             children: [
               IconButton(
                 icon: const Icon(Icons.edit_outlined,
-                    size: 18, color: Color(0xFF6A1B9A)),
+                  size: 18, color: Color(0xFF6A1B9A)),
                 onPressed: () async {
                   await Navigator.push(
                     context,
@@ -581,7 +1005,7 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
               ),
               IconButton(
                 icon: Icon(Icons.delete_outline,
-                    size: 18, color: Colors.red.shade400),
+                  size: 18, color: Colors.red.shade400),
                 onPressed: () => _confirmDelete(
                     'vacuna', () => vm.deleteVaccine(v.id)),
                 visualDensity: VisualDensity.compact,
@@ -610,7 +1034,7 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
             style: const TextStyle(
                 fontWeight: FontWeight.w600, fontSize: 15)),
         children: [
-          _addButton('Agregar desparasitación', const Color(0xFF00838F),
+          _addButton('Agregar desparasitacion', const Color(0xFF00838F),
               () async {
             await Navigator.push(
               context,
@@ -658,7 +1082,7 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                   style: const TextStyle(fontSize: 12)),
               Row(
                 children: [
-                  Text('Próxima: ${d.nextDueDateStr}',
+                  Text('Proxima: ${d.nextDueDateStr}',
                       style: TextStyle(fontSize: 12, color: dueColor)),
                   if (overdue) ...[
                     const SizedBox(width: 4),
@@ -686,7 +1110,7 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
             children: [
               IconButton(
                 icon: const Icon(Icons.edit_outlined,
-                    size: 18, color: Color(0xFF00838F)),
+                  size: 18, color: Color(0xFF00838F)),
                 onPressed: () async {
                   await Navigator.push(
                     context,
@@ -701,9 +1125,9 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
               ),
               IconButton(
                 icon: Icon(Icons.delete_outline,
-                    size: 18, color: Colors.red.shade400),
+                  size: 18, color: Colors.red.shade400),
                 onPressed: () => _confirmDelete(
-                    'desparasitación', () => vm.deleteDeworming(d.id)),
+                    'desparasitacion', () => vm.deleteDeworming(d.id)),
                 visualDensity: VisualDensity.compact,
               ),
             ],

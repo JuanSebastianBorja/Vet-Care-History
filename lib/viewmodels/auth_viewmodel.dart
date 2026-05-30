@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:image_picker/image_picker.dart';
 import '../data/services/supabase_service.dart';
 import '../data/models/user_model.dart';
 
@@ -14,7 +15,6 @@ class AuthViewModel extends ChangeNotifier {
   String? get error => _error;
   bool get isSignedIn => _user != null;
 
-  // Verificar sesión al iniciar app
   Future<void> checkSession() async {
     _isLoading = true;
     notifyListeners();
@@ -24,6 +24,7 @@ class AuthViewModel extends ChangeNotifier {
         id: _supabase.currentUser!.id,
         email: _supabase.currentUser!.email!,
         fullName: _supabase.currentUser!.userMetadata?['full_name'],
+        avatarUrl: _supabase.currentUser!.userMetadata?['avatar_url'],
         createdAt: DateTime.now(),
       );
     }
@@ -32,7 +33,6 @@ class AuthViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Registro
   Future<bool> register(String email, String password, String fullName) async {
     _isLoading = true;
     _error = null;
@@ -54,7 +54,6 @@ class AuthViewModel extends ChangeNotifier {
     return false;
   }
 
-  // Login
   Future<bool> login(String email, String password) async {
     _isLoading = true;
     _error = null;
@@ -76,7 +75,33 @@ class AuthViewModel extends ChangeNotifier {
     return false;
   }
 
-  // Cerrar sesión
+  Future<bool> updateUserProfile(String fullName, XFile? photo) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      if (_user == null) throw Exception('No hay usuario autenticado');
+      String? avatarUrl = _user!.avatarUrl;
+
+      if (photo != null) {
+        final bytes = await photo.readAsBytes();
+        final mimeType = photo.mimeType ?? 'image/jpeg';
+        avatarUrl = await _supabase.uploadAvatar(_user!.id, bytes, mimeType);
+      }
+
+      _user = await _supabase.updateProfile(fullName: fullName, avatarUrl: avatarUrl);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString().replaceAll('Exception: ', '');
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<void> logout() async {
     await _supabase.signOut();
     _user = null;

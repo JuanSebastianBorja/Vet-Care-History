@@ -3,22 +3,37 @@ import 'package:image_picker/image_picker.dart';
 import '../data/models/consultation_model.dart';
 import '../data/models/vaccine_model.dart';
 import '../data/models/deworming_model.dart';
+import '../data/models/appointment_model.dart';
 import '../data/services/history_service.dart';
+import '../data/services/appointment_service.dart';
 
 class HistoryViewModel extends ChangeNotifier {
   final HistoryService _service = HistoryService();
+  final AppointmentService _appointmentService = AppointmentService();
 
   List<ConsultationModel> _consultations = [];
   List<VaccineModel> _vaccines = [];
   List<DewormingModel> _dewormings = [];
+  List<AppointmentModel> _appointments = [];
   bool _isLoading = false;
   String? _error;
 
   List<ConsultationModel> get consultations => _consultations;
   List<VaccineModel> get vaccines => _vaccines;
   List<DewormingModel> get dewormings => _dewormings;
+  List<AppointmentModel> get appointments => _appointments;
   bool get isLoading => _isLoading;
   String? get error => _error;
+
+  List<AppointmentModel> get tomorrowAppointments {
+    final tomorrow = DateTime.now().add(const Duration(days: 1));
+    return _appointments.where((a) {
+      if (a.status != 'pending') return false;
+      return a.appointmentDate.year == tomorrow.year &&
+          a.appointmentDate.month == tomorrow.month &&
+          a.appointmentDate.day == tomorrow.day;
+    }).toList();
+  }
 
   Future<void> loadForPet(String petId) async {
     _isLoading = true;
@@ -29,10 +44,12 @@ class HistoryViewModel extends ChangeNotifier {
         _service.fetchConsultations(petId),
         _service.fetchVaccines(petId),
         _service.fetchDewormings(petId),
+        _appointmentService.fetchAppointments(petId),
       ]);
       _consultations = results[0] as List<ConsultationModel>;
       _vaccines = results[1] as List<VaccineModel>;
       _dewormings = results[2] as List<DewormingModel>;
+      _appointments = results[3] as List<AppointmentModel>;
     } catch (e) {
       _error = e.toString().replaceAll('Exception: ', '');
     }
@@ -40,8 +57,7 @@ class HistoryViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> addConsultation(
-      ConsultationModel c, List<XFile> photos) async {
+  Future<bool> addConsultation(ConsultationModel c, List<XFile> photos) async {
     _error = null;
     try {
       final saved = await _service.addConsultation(c, photos);
@@ -56,13 +72,10 @@ class HistoryViewModel extends ChangeNotifier {
   }
 
   Future<bool> updateConsultation(
-      ConsultationModel c,
-      List<XFile> newPhotos,
-      List<String> photoIdsToDelete) async {
+      ConsultationModel c, List<XFile> newPhotos, List<String> photoIdsToDelete) async {
     _error = null;
     try {
-      final updated =
-          await _service.updateConsultation(c, newPhotos, photoIdsToDelete);
+      final updated = await _service.updateConsultation(c, newPhotos, photoIdsToDelete);
       final idx = _consultations.indexWhere((x) => x.id == c.id);
       if (idx != -1) _consultations[idx] = updated;
       notifyListeners();
@@ -174,10 +187,58 @@ class HistoryViewModel extends ChangeNotifier {
     }
   }
 
+  Future<bool> addAppointment(AppointmentModel a) async {
+    _error = null;
+    try {
+      final saved = await _appointmentService.addAppointment(a);
+      _appointments.add(saved);
+      _appointments.sort((x, y) => x.appointmentDate.compareTo(y.appointmentDate));
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString().replaceAll('Exception: ', '');
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> updateAppointment(AppointmentModel a) async {
+    _error = null;
+    try {
+      final updated = await _appointmentService.updateAppointment(a);
+      final idx = _appointments.indexWhere((x) => x.id == a.id);
+      if (idx != -1) {
+        _appointments[idx] = updated;
+        _appointments.sort((x, y) => x.appointmentDate.compareTo(y.appointmentDate));
+      }
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString().replaceAll('Exception: ', '');
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> deleteAppointment(String id) async {
+    _error = null;
+    try {
+      await _appointmentService.deleteAppointment(id);
+      _appointments.removeWhere((a) => a.id == id);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString().replaceAll('Exception: ', '');
+      notifyListeners();
+      return false;
+    }
+  }
+
   void clear() {
     _consultations = [];
     _vaccines = [];
     _dewormings = [];
+    _appointments = [];
     _error = null;
     notifyListeners();
   }

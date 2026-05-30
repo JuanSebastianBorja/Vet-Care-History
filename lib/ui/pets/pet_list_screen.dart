@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../data/models/pet_model.dart';
+import '../../data/models/user_model.dart';
+import '../../data/models/appointment_model.dart';
+import '../../data/services/appointment_service.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/pet_viewmodel.dart';
+import '../../viewmodels/history_viewmodel.dart';
 import '../auth/login_screen.dart';
+import '../profile/profile_screen.dart';
 import 'pet_detail_screen.dart';
 import 'pet_form_screen.dart';
 
@@ -16,6 +21,7 @@ class PetListScreen extends StatefulWidget {
 
 class _PetListScreenState extends State<PetListScreen> {
   final _searchCtrl = TextEditingController();
+  List<AppointmentModel> _allTomorrowAppointments = [];
 
   static const _species = [
     'Todos',
@@ -39,31 +45,132 @@ class _PetListScreenState extends State<PetListScreen> {
     super.dispose();
   }
 
-  void _load() {
+  void _load() async {
     final uid = context.read<AuthViewModel>().user?.id;
-    if (uid != null) context.read<PetViewModel>().loadPets(uid);
+    if (uid == null) return;
+
+    final petVm = context.read<PetViewModel>();
+    await petVm.loadPets(uid);
+
+    final apptService = AppointmentService();
+    List<AppointmentModel> tomorrowList = [];
+    final tomorrow = DateTime.now().add(const Duration(days: 1));
+
+    for (final pet in petVm.pets) {
+      try {
+        final appointments = await apptService.fetchAppointments(pet.id);
+        final filtered = appointments.where((a) {
+          if (a.status != 'pending') return false;
+          return a.appointmentDate.year == tomorrow.year &&
+              a.appointmentDate.month == tomorrow.month &&
+              a.appointmentDate.day == tomorrow.day;
+        }).toList();
+        tomorrowList.addAll(filtered);
+      } catch (_) {}
+    }
+
+    if (mounted) {
+      setState(() {
+        _allTomorrowAppointments = tomorrowList;
+      });
+
+      if (tomorrowList.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.notifications_active, color: Colors.white),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Recordatorio: Tienes ${tomorrowList.length} cita(s) programada(s) para mañana.',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFF2E7D32),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 6),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    }
+  }
+
+  void _showRemindersDialog() {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.notifications_active_rounded, color: Color(0xFF2E7D32)),
+            SizedBox(width: 10),
+            Text('Avisos de Mañana'),
+          ],
+        ),
+        content: _allTomorrowAppointments.isEmpty
+            ? const Text('No tienes citas programadas para el dia de mañana.')
+            : SizedBox(
+                width: double.maxFinite,
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: _allTomorrowAppointments.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (ctx, i) {
+                    final a = _allTomorrowAppointments[i];
+                    return Card(
+                      color: const Color(0xFFF5FAF5),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              a.motive,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                            const SizedBox(height: 4),
+                            Text('Hora: ${a.timeStr}', style: const TextStyle(fontSize: 12)),
+                            if (a.vetName != null)
+                              Text('Veterinario: ${a.vetName}', style: const TextStyle(fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Entendido'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final authVm = context.watch<AuthViewModel>();
     final petVm = context.watch<PetViewModel>();
-    final firstName =
-        authVm.user?.fullName?.split(' ').first ?? 'Veterinario';
 
     return Scaffold(
       body: CustomScrollView(
         slivers: [
           _AppBarSliver(
-            name: firstName,
-            onLogout: () async {
-              await authVm.logout();
-              if (!context.mounted) return;
-              Navigator.pushReplacement(
+            user: authVm.user,
+            onProfileTap: () {
+              Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const LoginScreen()),
-              );
+                MaterialPageRoute(builder: (_) => const ProfileScreen()),
+              ).then((_) => _load());
             },
+            onNotificationsTap: _showRemindersDialog,
+            hasReminders: _allTomorrowAppointments.isNotEmpty,
           ),
           SliverToBoxAdapter(
             child: _SearchBar(
@@ -122,30 +229,94 @@ class _PetListScreenState extends State<PetListScreen> {
 }
 
 class _AppBarSliver extends StatelessWidget {
-  final String name;
-  final VoidCallback onLogout;
+  final UserModel? user;
+  final VoidCallback onProfileTap;
+  final VoidCallback onNotificationsTap;
+  final bool hasReminders;
 
-  const _AppBarSliver({required this.name, required this.onLogout});
+  const _AppBarSliver({
+    required this.user,
+    required this.onProfileTap,
+    required this.onNotificationsTap,
+    required this.hasReminders,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final initials = user?.fullName != null && user!.fullName!.isNotEmpty
+        ? user!.fullName!.trim().split(' ').map((e) => e[0]).take(2).join().toUpperCase()
+        : '?';
+
+    ImageProvider? imageProvider;
+    if (user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty) {
+      imageProvider = NetworkImage(user!.avatarUrl!);
+    }
+
     return SliverAppBar(
       floating: true,
       snap: true,
       title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text('VetCare'),
           Text(
-            'Hola, $name',
+            user?.fullName != null ? 'Hola, ${user!.fullName!.split(" ").first}' : 'Hola, Veterinario',
             style: const TextStyle(fontSize: 12, color: Colors.white70),
           ),
         ],
       ),
       actions: [
-        IconButton(
-          icon: const Icon(Icons.logout_rounded),
-          tooltip: 'Cerrar sesión',
-          onPressed: onLogout,
+        Stack(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.notifications_outlined),
+              tooltip: 'Avisos',
+              onPressed: onNotificationsTap,
+            ),
+            if (hasReminders)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  width: 10,
+                  height: 10,
+                  decoration: const BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(width: 4),
+        GestureDetector(
+          onTap: onProfileTap,
+          child: Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white70, width: 1.5),
+                color: Colors.white24,
+              ),
+              child: CircleAvatar(
+                backgroundColor: Colors.transparent,
+                backgroundImage: imageProvider,
+                child: imageProvider == null
+                    ? Text(
+                        initials,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      )
+                    : null,
+              ),
+            ),
+          ),
         ),
       ],
     );
