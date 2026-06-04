@@ -389,18 +389,36 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
 
   SliverAppBar _buildSliverAppBar() {
     return SliverAppBar(
-      expandedHeight: 300,
+      expandedHeight: 280,
       pinned: true,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new_rounded,
-            color: Colors.white),
-        onPressed: () => Navigator.pop(context),
+      backgroundColor: const Color(0xFF0F766E),
+      leading: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.25),
+            shape: BoxShape.circle,
+          ),
+          child: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
       ),
       actions: [
-        IconButton(
-          icon: const Icon(Icons.picture_as_pdf_outlined, color: Colors.white),
-          tooltip: 'Generar reporte clinico',
-          onPressed: _showReportDialog,
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.25),
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.picture_as_pdf_outlined, color: Colors.white, size: 20),
+              tooltip: 'Generar reporte clinico',
+              onPressed: _showReportDialog,
+            ),
+          ),
         ),
       ],
       flexibleSpace: FlexibleSpaceBar(
@@ -414,8 +432,8 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.transparent,
-                    Colors.black.withValues(alpha: 0.65),
+                    Colors.black.withValues(alpha: 0.1),
+                    Colors.black.withValues(alpha: 0.7),
                   ],
                 ),
               ),
@@ -431,16 +449,17 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                     _pet.name,
                     style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 30,
-                        fontWeight: FontWeight.bold),
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   Row(
                     children: [
-                      _badge(_pet.species, const Color(0xFF2E7D32)),
+                      _badge(_pet.species, const Color(0xFF0D9488)),
                       if (_pet.breed != null) ...[
                         const SizedBox(width: 8),
-                        _badge(_pet.breed!, Colors.blueGrey),
+                        _badge(_pet.breed!, Colors.grey.shade700),
                       ],
                     ],
                   ),
@@ -466,32 +485,32 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF1B5E20), Color(0xFF4CAF50)],
+            colors: [Color(0xFF0F766E), Color(0xFF115E59)],
           ),
         ),
         child: const Center(
-            child: Icon(Icons.pets, size: 80, color: Colors.white24)),
+            child: Icon(Icons.pets_rounded, size: 72, color: Colors.white24)),
       );
 
   Widget _badge(String text, Color color) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         decoration: BoxDecoration(
             color: color.withValues(alpha: 0.85),
-            borderRadius: BorderRadius.circular(12)),
+            borderRadius: BorderRadius.circular(10)),
         child: Text(text,
             style: const TextStyle(
                 color: Colors.white,
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: FontWeight.w600)),
       );
 
   Widget _buildStatRow() => Row(
         children: [
           _statCard(Icons.cake_outlined, 'Edad', _pet.ageString,
-              const Color(0xFF1565C0)),
+              const Color(0xFF0284C7)),
           const SizedBox(width: 10),
           _statCard(Icons.wc_outlined, 'Sexo', _pet.sexLabel,
-              const Color(0xFF6A1B9A)),
+              const Color(0xFF7C3AED)),
           const SizedBox(width: 10),
           _statCard(
             _pet.notificationsEnabled
@@ -499,68 +518,94 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                 : Icons.notifications_off_outlined,
             'Avisos',
             _pet.notificationsEnabled ? 'Activo' : 'Apagado',
-            const Color(0xFF2E7D32),
+            const Color(0xFF0F766E),
           ),
         ],
       );
 
   Widget _statCard(IconData icon, String label, String value, Color color) =>
       Expanded(
-        child: Card(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-            child: Column(
-              children: [
-                Icon(icon, color: color, size: 22),
-                const SizedBox(height: 6),
-                Text(label,
-                    style:
-                        const TextStyle(fontSize: 11, color: Colors.grey)),
-                const SizedBox(height: 2),
-                Text(value,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 13),
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis),
-              ],
-            ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.01),
+                blurRadius: 10,
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              const SizedBox(height: 8),
+              Text(label,
+                  style:
+                      const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w500)),
+              const SizedBox(height: 2),
+              Text(value,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis),
+            ],
           ),
         ),
       );
 
   Widget _buildAppointmentSection(HistoryViewModel vm) {
-    return Card(
-      child: ExpansionTile(
-        leading: Container(
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-              color: const Color(0xFF2E7D32).withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10)),
-          child: const Icon(Icons.calendar_month_outlined,
-              color: Color(0xFF2E7D32), size: 20),
+    const sectionColor = Color(0xFF0F766E);
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          leading: Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+                color: sectionColor.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12)),
+            child: const Icon(Icons.calendar_month_outlined,
+                color: sectionColor, size: 20),
+          ),
+          title: Text(
+              'Citas Veterinarias (${vm.appointments.length})',
+              style: const TextStyle(
+                  fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B))),
+          children: [
+            _addButton('Agregar cita', sectionColor, () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        AppointmentFormScreen(petId: _pet.id)),
+              );
+              _reload();
+            }),
+            if (vm.appointments.isEmpty)
+              _emptyState(Icons.calendar_month_outlined)
+            else
+              ...vm.appointments.map((a) => _appointmentTile(a, vm)),
+            const SizedBox(height: 8),
+          ],
         ),
-        title: Text(
-            'Citas Veterinarias (${vm.appointments.length})',
-            style: const TextStyle(
-                fontWeight: FontWeight.w600, fontSize: 15)),
-        children: [
-          _addButton('Agregar cita', const Color(0xFF2E7D32), () async {
-            await Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) =>
-                      AppointmentFormScreen(petId: _pet.id)),
-            );
-            _reload();
-          }),
-          if (vm.appointments.isEmpty)
-            _emptyState(Icons.calendar_month_outlined)
-          else
-            ...vm.appointments.map((a) => _appointmentTile(a, vm)),
-          const SizedBox(height: 8),
-        ],
       ),
     );
   }
@@ -571,17 +616,21 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
 
     Color statusColor;
     if (a.status == 'completed') {
-      statusColor = const Color(0xFF2E7D32);
+      statusColor = const Color(0xFF0F766E);
     } else if (a.status == 'cancelled') {
-      statusColor = Colors.grey.shade600;
+      statusColor = Colors.grey.shade500;
     } else {
-      statusColor = const Color(0xFF1565C0);
+      statusColor = const Color(0xFF0284C7);
     }
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-      child: Card(
-        color: const Color(0xFFFAFAFA),
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Column(
@@ -593,13 +642,13 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                   Expanded(
                     child: Text(
                       a.motive,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1E293B)),
                     ),
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: statusColor.withValues(alpha: 0.12),
+                      color: statusColor.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -607,20 +656,20 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                       style: TextStyle(
                         fontSize: 10,
                         color: statusColor,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               Row(
                 children: [
                   Icon(Icons.calendar_today_rounded, size: 12, color: Colors.grey.shade500),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 6),
                   Text(
                     '${a.dateStr} a las ${a.timeStr}',
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
                   ),
                 ],
               ),
@@ -629,32 +678,40 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                 Row(
                   children: [
                     Icon(Icons.person_outline_rounded, size: 12, color: Colors.grey.shade500),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: 6),
                     Text(
                       'Veterinario: ${a.vetName}',
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),
               ],
               if (a.notes != null) ...[
-                const SizedBox(height: 4),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(Icons.notes_rounded, size: 12, color: Colors.grey.shade500),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        a.notes!,
-                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.notes_rounded, size: 12, color: Colors.grey.shade500),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          a.notes!,
+                          style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
               if (isPast && isPending) ...[
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
@@ -662,12 +719,12 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                         onPressed: () async {
                           await vm.updateAppointment(a.copyWith(status: 'completed'));
                         },
-                        icon: const Icon(Icons.check_rounded, size: 14, color: Color(0xFF2E7D32)),
-                        label: const Text('Completar', style: TextStyle(fontSize: 11, color: Color(0xFF2E7D32))),
+                        icon: const Icon(Icons.check_rounded, size: 14, color: Color(0xFF0F766E)),
+                        label: const Text('Completar', style: TextStyle(fontSize: 11, color: Color(0xFF0F766E), fontWeight: FontWeight.bold)),
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Color(0xFF2E7D32)),
+                          side: const BorderSide(color: Color(0xFF0F766E)),
                           padding: EdgeInsets.zero,
-                          visualDensity: VisualDensity.compact,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                       ),
                     ),
@@ -678,11 +735,11 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                           await vm.updateAppointment(a.copyWith(status: 'cancelled'));
                         },
                         icon: const Icon(Icons.close_rounded, size: 14, color: Colors.grey),
-                        label: const Text('Cancelar', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                        label: const Text('Cancelar', style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: Colors.grey),
                           padding: EdgeInsets.zero,
-                          visualDensity: VisualDensity.compact,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                       ),
                     ),
@@ -693,7 +750,7 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF2E7D32)),
+                    icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF0F766E)),
                     onPressed: () async {
                       await Navigator.push(
                         context,
@@ -723,47 +780,61 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
   }
 
   Widget _buildConsultationSection(HistoryViewModel vm) {
-    return Card(
-      child: ExpansionTile(
-        leading: Container(
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-              color: const Color(0xFF1565C0).withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10)),
-          child: const Icon(Icons.medical_services_outlined,
-              color: Color(0xFF1565C0), size: 20),
+    const sectionColor = Color(0xFF0284C7);
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          leading: Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+                color: sectionColor.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12)),
+            child: const Icon(Icons.medical_services_outlined,
+                color: sectionColor, size: 20),
+          ),
+          title: Text(
+              'Consultas (${vm.consultations.length})',
+              style: const TextStyle(
+                  fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B))),
+          children: [
+            _addButton('Agregar consulta', sectionColor, () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        ConsultationFormScreen(petId: _pet.id)),
+              );
+              _reload();
+            }),
+            if (vm.consultations.isEmpty)
+              _emptyState(Icons.medical_services_outlined)
+            else
+              ...vm.consultations.map((c) => _consultationTile(c, vm)),
+            const SizedBox(height: 8),
+          ],
         ),
-        title: Text(
-            'Consultas (${vm.consultations.length})',
-            style: const TextStyle(
-                fontWeight: FontWeight.w600, fontSize: 15)),
-        children: [
-          _addButton('Agregar consulta', const Color(0xFF1565C0), () async {
-            await Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) =>
-                      ConsultationFormScreen(petId: _pet.id)),
-            );
-            _reload();
-          }),
-          if (vm.consultations.isEmpty)
-            _emptyState(Icons.medical_services_outlined)
-          else
-            ...vm.consultations.map((c) => _consultationTile(c, vm)),
-          const SizedBox(height: 8),
-        ],
       ),
     );
   }
 
-  Widget _consultationTile(
-      ConsultationModel c, HistoryViewModel vm) {
+  Widget _consultationTile(ConsultationModel c, HistoryViewModel vm) {
+    const itemColor = Color(0xFF0284C7);
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-      child: Card(
-        color: const Color(0xFFF5F8FF),
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Column(
@@ -772,11 +843,11 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
               Row(
                 children: [
                   Container(
-                    width: 48,
+                    width: 52,
                     padding: const EdgeInsets.symmetric(vertical: 6),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1565C0).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
+                      color: itemColor.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(
                       children: [
@@ -784,10 +855,10 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                             style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 18,
-                                color: Color(0xFF1565C0))),
+                                color: itemColor)),
                         Text(c.monthStr,
                             style: const TextStyle(
-                                fontSize: 10, color: Color(0xFF1565C0))),
+                                fontSize: 11, color: itemColor, fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ),
@@ -798,7 +869,7 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                       children: [
                         Text(c.motive,
                             style: const TextStyle(
-                                fontWeight: FontWeight.bold)),
+                                fontWeight: FontWeight.bold, color: Color(0xFF1E293B), fontSize: 14)),
                         if (c.diagnosis != null &&
                             c.diagnosis!.isNotEmpty)
                           Text(c.diagnosis!,
@@ -813,48 +884,44 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                   if (c.photos.isNotEmpty)
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1565C0).withValues(alpha: 0.1),
+                        color: itemColor.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Row(
+                      child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.photo,
-                              size: 12, color: Color(0xFF1565C0)),
-                          const SizedBox(width: 2),
-                          Text('${c.photos.length}',
-                              style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Color(0xFF1565C0))),
+                          Icon(Icons.photo_library_outlined,
+                              size: 14, color: itemColor),
+                          SizedBox(width: 4),
                         ],
                       ),
                     ),
                 ],
               ),
               if (c.photos.isNotEmpty) ...[
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 SizedBox(
-                  height: 60,
+                  height: 64,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: c.photos.length,
                     separatorBuilder: (ctx, i) =>
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 8),
                     itemBuilder: (ctx, i) => ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(10),
                       child: Image.network(
                         c.photos[i].photoUrl,
-                        width: 60,
-                        height: 60,
+                        width: 64,
+                        height: 64,
                         fit: BoxFit.cover,
                         errorBuilder: (ctx, err, stack) => Container(
-                          width: 60,
-                          height: 60,
+                          width: 64,
+                          height: 64,
                           color: Colors.grey.shade200,
                           child: const Icon(Icons.broken_image,
-                              size: 20),
+                              size: 20, color: Colors.grey),
                         ),
                       ),
                     ),
@@ -877,18 +944,18 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                       _reload();
                     },
                     icon: const Icon(Icons.edit_outlined, size: 16),
-                    label: const Text('Editar'),
+                    label: const Text('Editar', style: TextStyle(fontWeight: FontWeight.bold)),
                     style: TextButton.styleFrom(
-                        foregroundColor: const Color(0xFF1565C0),
+                        foregroundColor: itemColor,
                         visualDensity: VisualDensity.compact),
                   ),
                   TextButton.icon(
                     onPressed: () => _confirmDelete(
                         'consulta', () => vm.deleteConsultation(c.id)),
                     icon: const Icon(Icons.delete_outline, size: 16),
-                    label: const Text('Eliminar'),
+                    label: const Text('Eliminar', style: TextStyle(fontWeight: FontWeight.bold)),
                     style: TextButton.styleFrom(
-                        foregroundColor: Colors.red,
+                        foregroundColor: Colors.red.shade400,
                         visualDensity: VisualDensity.compact),
                   ),
                 ],
@@ -901,96 +968,114 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
   }
 
   Widget _buildVaccineSection(HistoryViewModel vm) {
-    return Card(
-      child: ExpansionTile(
-        leading: Container(
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-              color: const Color(0xFF6A1B9A).withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10)),
-          child: const Icon(Icons.vaccines_outlined,
-              color: Color(0xFF6A1B9A), size: 20),
+    const sectionColor = Color(0xFF7C3AED);
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          leading: Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+                color: sectionColor.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12)),
+            child: const Icon(Icons.vaccines_outlined,
+                color: sectionColor, size: 20),
+          ),
+          title: Text('Vacunas (${vm.vaccines.length})',
+              style: const TextStyle(
+                  fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B))),
+          children: [
+            _addButton('Agregar vacuna', sectionColor, () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => VaccineFormScreen(petId: _pet.id)),
+              );
+              _reload();
+            }),
+            if (vm.vaccines.isEmpty)
+              _emptyState(Icons.vaccines_outlined)
+            else
+              ...vm.vaccines.map((v) => _vaccineTile(v, vm)),
+            const SizedBox(height: 8),
+          ],
         ),
-        title: Text('Vacunas (${vm.vaccines.length})',
-            style: const TextStyle(
-                fontWeight: FontWeight.w600, fontSize: 15)),
-        children: [
-          _addButton('Agregar vacuna', const Color(0xFF6A1B9A), () async {
-            await Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) => VaccineFormScreen(petId: _pet.id)),
-            );
-            _reload();
-          }),
-          if (vm.vaccines.isEmpty)
-            _emptyState(Icons.vaccines_outlined)
-          else
-            ...vm.vaccines.map((v) => _vaccineTile(v, vm)),
-          const SizedBox(height: 8),
-        ],
       ),
     );
   }
 
   Widget _vaccineTile(VaccineModel v, HistoryViewModel vm) {
     final overdue = v.isOverdue;
-    final dueColor =
-        overdue ? Colors.red.shade600 : const Color(0xFF2E7D32);
+    final dueColor = overdue ? const Color(0xFFF43F5E) : const Color(0xFF0F766E);
+    const itemColor = Color(0xFF7C3AED);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-      child: Card(
-        color: const Color(0xFFF9F5FF),
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
         child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           leading: Container(
-            width: 40,
-            height: 40,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              color: dueColor.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
+              color: dueColor.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(Icons.vaccines_outlined, color: dueColor, size: 20),
+            child: Icon(Icons.vaccines_outlined, color: dueColor, size: 22),
           ),
           title: Text(v.vaccineName,
-              style: const TextStyle(fontWeight: FontWeight.w600)),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Aplicada: ${v.applicationDateStr}',
-                  style: const TextStyle(fontSize: 12)),
-              Row(
-                children: [
-                  Text('Proxima: ${v.nextDueDateStr}',
-                      style: TextStyle(fontSize: 12, color: dueColor)),
-                  if (overdue) ...[
-                    const SizedBox(width: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 4, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade600,
-                        borderRadius: BorderRadius.circular(4),
+              style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B), fontSize: 14)),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 4.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Aplicada: ${v.applicationDateStr}',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    Text('Próxima: ${v.nextDueDateStr}',
+                        style: TextStyle(fontSize: 12, color: dueColor, fontWeight: FontWeight.w600)),
+                    if (overdue) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF43F5E),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Text('VENCIDA',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold)),
                       ),
-                      child: const Text('VENCIDA',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold)),
-                    ),
+                    ],
                   ],
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
-          isThreeLine: true,
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               IconButton(
                 icon: const Icon(Icons.edit_outlined,
-                  size: 18, color: Color(0xFF6A1B9A)),
+                  size: 18, color: itemColor),
                 onPressed: () async {
                   await Navigator.push(
                     context,
@@ -1018,99 +1103,117 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
   }
 
   Widget _buildDewormingSection(HistoryViewModel vm) {
-    return Card(
-      child: ExpansionTile(
-        leading: Container(
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-              color: const Color(0xFF00838F).withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10)),
-          child: const Icon(Icons.bug_report_outlined,
-              color: Color(0xFF00838F), size: 20),
+    const sectionColor = Color(0xFF0D9488);
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          leading: Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+                color: sectionColor.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12)),
+            child: const Icon(Icons.bug_report_outlined,
+                color: sectionColor, size: 20),
+          ),
+          title: Text(
+              'Desparasitaciones (${vm.dewormings.length})',
+              style: const TextStyle(
+                  fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B))),
+          children: [
+            _addButton('Agregar desparasitación', sectionColor,
+                () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => DewormingFormScreen(petId: _pet.id)),
+              );
+              _reload();
+            }),
+            if (vm.dewormings.isEmpty)
+              _emptyState(Icons.bug_report_outlined)
+            else
+              ...vm.dewormings.map((d) => _dewormingTile(d, vm)),
+            const SizedBox(height: 8),
+          ],
         ),
-        title: Text(
-            'Desparasitaciones (${vm.dewormings.length})',
-            style: const TextStyle(
-                fontWeight: FontWeight.w600, fontSize: 15)),
-        children: [
-          _addButton('Agregar desparasitacion', const Color(0xFF00838F),
-              () async {
-            await Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) => DewormingFormScreen(petId: _pet.id)),
-            );
-            _reload();
-          }),
-          if (vm.dewormings.isEmpty)
-            _emptyState(Icons.bug_report_outlined)
-          else
-            ...vm.dewormings.map((d) => _dewormingTile(d, vm)),
-          const SizedBox(height: 8),
-        ],
       ),
     );
   }
 
   Widget _dewormingTile(DewormingModel d, HistoryViewModel vm) {
     final overdue = d.isOverdue;
-    final dueColor =
-        overdue ? Colors.red.shade600 : const Color(0xFF00838F);
+    final dueColor = overdue ? const Color(0xFFF43F5E) : const Color(0xFF0D9488);
+    const itemColor = Color(0xFF0D9488);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-      child: Card(
-        color: const Color(0xFFF5FAFA),
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
         child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           leading: Container(
-            width: 40,
-            height: 40,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              color: dueColor.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
+              color: dueColor.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(12),
             ),
             child:
-                Icon(Icons.bug_report_outlined, color: dueColor, size: 20),
+                Icon(Icons.bug_report_outlined, color: dueColor, size: 22),
           ),
           title: Text(d.product,
-              style: const TextStyle(fontWeight: FontWeight.w600)),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(d.detailStr,
-                  style: const TextStyle(fontSize: 12)),
-              Row(
-                children: [
-                  Text('Proxima: ${d.nextDueDateStr}',
-                      style: TextStyle(fontSize: 12, color: dueColor)),
-                  if (overdue) ...[
-                    const SizedBox(width: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 4, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade600,
-                        borderRadius: BorderRadius.circular(4),
+              style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B), fontSize: 14)),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 4.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(d.detailStr,
+                    style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    Text('Próxima: ${d.nextDueDateStr}',
+                        style: TextStyle(fontSize: 12, color: dueColor, fontWeight: FontWeight.w600)),
+                    if (overdue) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF43F5E),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Text('VENCIDA',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold)),
                       ),
-                      child: const Text('VENCIDA',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold)),
-                    ),
+                    ],
                   ],
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
-          isThreeLine: true,
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               IconButton(
                 icon: const Icon(Icons.edit_outlined,
-                  size: 18, color: Color(0xFF00838F)),
+                  size: 18, color: itemColor),
                 onPressed: () async {
                   await Navigator.push(
                     context,
@@ -1139,27 +1242,28 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
 
   Widget _addButton(String label, Color color, VoidCallback onTap) =>
       Padding(
-        padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
         child: OutlinedButton.icon(
           onPressed: onTap,
-          icon: Icon(Icons.add, size: 18, color: color),
-          label: Text(label, style: TextStyle(color: color)),
+          icon: Icon(Icons.add_rounded, size: 18, color: color),
+          label: Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold)),
           style: OutlinedButton.styleFrom(
-            side: BorderSide(color: color.withValues(alpha: 0.4)),
+            side: BorderSide(color: color.withValues(alpha: 0.3), width: 1.5),
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10)),
+                borderRadius: BorderRadius.circular(12)),
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
           ),
         ),
       );
 
   Widget _emptyState(IconData icon) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
         child: Column(
           children: [
-            Icon(icon, size: 36, color: Colors.grey.shade300),
+            Icon(icon, size: 40, color: Colors.grey.shade300),
             const SizedBox(height: 8),
             Text('Sin registros',
-                style: TextStyle(color: Colors.grey.shade500)),
+                style: TextStyle(color: Colors.grey.shade500, fontSize: 13, fontWeight: FontWeight.w500)),
           ],
         ),
       );

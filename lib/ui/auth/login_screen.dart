@@ -49,24 +49,35 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF2E7D32),
-      body: Column(
-        children: [
-          _buildHeader(),
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                color: Color(0xFFF5FAF5),
-                borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-              ),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(28, 32, 28, 28),
-                child: _buildForm(),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF0F766E), // Teal profundo
+              Color(0xFF042F2E), // Teal muy oscuro/casi negro
+            ],
+          ),
+        ),
+        child: Column(
+          children: [
+            _buildHeader(),
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(36)),
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(32, 40, 32, 32),
+                  child: _buildForm(),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -75,32 +86,50 @@ class _LoginScreenState extends State<LoginScreen> {
     return SafeArea(
       bottom: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(28, 28, 28, 36),
+        padding: const EdgeInsets.fromLTRB(28, 32, 28, 36),
         child: Column(
           children: [
             Container(
-              width: 88,
-              height: 88,
+              width: 96,
+              height: 96,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(24),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withValues(alpha: 0.25),
+                    Colors.white.withValues(alpha: 0.05),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.3),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 15,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
-              child: const Icon(Icons.pets, size: 52, color: Colors.white),
+              child: const Icon(Icons.pets_rounded, size: 54, color: Colors.white),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             const Text(
               'VetCare',
               style: TextStyle(
-                fontSize: 36,
+                fontSize: 38,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
-                letterSpacing: 1.2,
+                letterSpacing: 1.5,
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
             const Text(
-              'Expediente clínico para tus mascotas',
-              style: TextStyle(fontSize: 14, color: Colors.white70),
+              'Expediente clínico inteligente para tus mascotas',
+              style: TextStyle(fontSize: 14, color: Colors.white70, height: 1.4),
               textAlign: TextAlign.center,
             ),
           ],
@@ -117,21 +146,27 @@ class _LoginScreenState extends State<LoginScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Text(
-              'Iniciar sesión',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              'Iniciar Sesión',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF0F766E),
+              ),
+              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
             Text(
-              'Bienvenido de vuelta',
+              'Bienvenido de vuelta a VetCare',
               style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: 36),
             TextFormField(
               controller: _emailCtrl,
               keyboardType: TextInputType.emailAddress,
               decoration: const InputDecoration(
                 labelText: 'Correo electrónico',
-                prefixIcon: Icon(Icons.email_outlined),
+                prefixIcon: Icon(Icons.email_outlined, color: Color(0xFF0F766E)),
               ),
               validator: (v) {
                 if (v == null || v.isEmpty) return 'Campo requerido';
@@ -139,18 +174,19 @@ class _LoginScreenState extends State<LoginScreen> {
                 return null;
               },
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             TextFormField(
               controller: _passwordCtrl,
               obscureText: _obscure,
               decoration: InputDecoration(
                 labelText: 'Contraseña',
-                prefixIcon: const Icon(Icons.lock_outlined),
+                prefixIcon: const Icon(Icons.lock_outlined, color: Color(0xFF0F766E)),
                 suffixIcon: IconButton(
                   icon: Icon(
                     _obscure
                         ? Icons.visibility_outlined
                         : Icons.visibility_off_outlined,
+                    color: Colors.grey,
                   ),
                   onPressed: () => setState(() => _obscure = !_obscure),
                 ),
@@ -158,30 +194,40 @@ class _LoginScreenState extends State<LoginScreen> {
               validator: (v) =>
                   (v == null || v.isEmpty) ? 'Campo requerido' : null,
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 36),
             SizedBox(
-              height: 52,
+              height: 56,
               child: ElevatedButton(
                 onPressed: vm.isLoading ? null : _submit,
+                style: ElevatedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 2,
+                  shadowColor: const Color(0xFF0F766E).withValues(alpha: 0.3),
+                ),
                 child: vm.isLoading
                     ? const SizedBox(
-                        height: 20,
-                        width: 20,
+                        height: 24,
+                        width: 24,
                         child: CircularProgressIndicator(
-                          strokeWidth: 2,
+                          strokeWidth: 2.5,
                           color: Colors.white,
                         ),
                       )
-                    : const Text('Iniciar Sesión'),
+                    : const Text(
+                        'Iniciar Sesión',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 28),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
                   '¿No tienes cuenta? ',
-                  style: TextStyle(color: Colors.grey.shade600),
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
                 ),
                 GestureDetector(
                   onTap: () {
@@ -196,7 +242,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     'Regístrate',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF2E7D32),
+                      fontSize: 14,
+                      color: Color(0xFF0F766E),
                     ),
                   ),
                 ),
