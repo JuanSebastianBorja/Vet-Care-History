@@ -14,7 +14,7 @@ class DewormingRepository {
   DewormingRepository._internal();
 
   final HistoryService _remote = HistoryService();
-  final AppDatabase _local = AppDatabase();
+  final AppDatabase _local = database;
   final Uuid _uuid = const Uuid();
 
   Future<List<DewormingModel>> fetchDewormings(String petId) async {

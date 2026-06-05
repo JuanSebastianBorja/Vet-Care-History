@@ -4,6 +4,14 @@ import 'db_connection.dart';
 
 part 'app_database.g.dart';
 
+/// Singleton de la base de datos para evitar múltiples instancias
+AppDatabase? _databaseInstance;
+
+AppDatabase get database {
+  _databaseInstance ??= AppDatabase._internal();
+  return _databaseInstance!;
+}
+
 class LocalPets extends Table {
   TextColumn get id => text()();
 
@@ -162,7 +170,7 @@ class PendingConsultationPhotos extends Table {
   ],
 )
 class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(openConnection());
+  AppDatabase._internal() : super(openConnection());
 
   @override
   int get schemaVersion => 4;

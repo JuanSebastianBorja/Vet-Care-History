@@ -14,7 +14,7 @@ class PetRepository {
   PetRepository._internal();
 
   final PetService _remote = PetService();
-  final AppDatabase _local = AppDatabase();
+  final AppDatabase _local = database;
   final Uuid _uuid = const Uuid();
 
   Stream<List<PetModel>> watchPets(String userId) {

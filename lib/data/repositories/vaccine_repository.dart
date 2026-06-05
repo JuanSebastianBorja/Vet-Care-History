@@ -14,7 +14,7 @@ class VaccineRepository {
   VaccineRepository._internal();
 
   final HistoryService _remote = HistoryService();
-  final AppDatabase _local = AppDatabase();
+  final AppDatabase _local = database;
   final Uuid _uuid = const Uuid();
 
   Future<List<VaccineModel>> fetchVaccines(String petId) async {
