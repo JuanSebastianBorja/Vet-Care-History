@@ -1,5 +1,5 @@
-import 'dart:typed_data';
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -50,6 +50,7 @@ class SupabaseService {
     return null;
   }
 
+  // Login
   Future<UserModel?> signIn(String email, String password) async {
     try {
       final response = await _client.auth.signInWithPassword(
@@ -62,7 +63,6 @@ class SupabaseService {
           id: response.user!.id,
           email: response.user!.email!,
           fullName: response.user!.userMetadata?['full_name'],
-          avatarUrl: response.user!.userMetadata?['avatar_url'],
           createdAt: DateTime.now(),
         );
       }
@@ -72,17 +72,7 @@ class SupabaseService {
     return null;
   }
 
-  Future<void> signOut() async {
-    final googleSignIn = GoogleSignIn(
-      scopes: const ['email', 'profile'],
-      serverClientId: AppConstants.googleWebClientId,
-    );
-    if (await googleSignIn.isSignedIn()) {
-      await googleSignIn.disconnect();
-    }
-    await _client.auth.signOut();
-  }
-
+  // Login con Google
   Future<UserModel?> signInWithGoogle() async {
     try {
       final String? iosClientId = AppConstants.googleIosClientId.isNotEmpty
@@ -97,6 +87,7 @@ class SupabaseService {
         serverClientId: kIsWeb ? null : AppConstants.googleWebClientId,
       );
 
+      // Limpia estado anterior para evitar bloqueos silenciosos del flujo.
       await googleSignIn.signOut();
 
       final googleUser = await googleSignIn.signIn();
@@ -136,6 +127,7 @@ class SupabaseService {
     return null;
   }
 
+  // Login con GitHub
   Future<UserModel?> signInWithGithub() async {
     try {
       final launched = await _client.auth.signInWithOAuth(
@@ -184,10 +176,43 @@ class SupabaseService {
     }
   }
 
-  Future<String> uploadAvatar(String userId, Uint8List bytes, String mimeType) async {
+  // Cerrar sesión
+  Future<void> signOut() async {
+    final googleSignIn = GoogleSignIn(
+      scopes: const ['email', 'profile'],
+      serverClientId: AppConstants.googleWebClientId,
+    );
+    if (await googleSignIn.isSignedIn()) {
+      await googleSignIn.disconnect();
+    }
+    await _client.auth.signOut();
+  }
+
+  // Perfil del usuario
+  Future<Map<String, dynamic>?> fetchProfile(String userId) async {
+    try {
+      final data = await _client.from('profiles').select().eq('id', userId).single();
+      return data;
+    } catch (e) {
+      print('Error fetching profile: $e');
+      return null;
+    }
+  }
+
+  Future<void> updateProfile(String userId, Map<String, dynamic> updates) async {
+    await _client.from('profiles').update(updates).eq('id', userId);
+  }
+
+  Future<String> uploadAvatar(
+    String userId,
+    Uint8List bytes,
+    String mimeType,
+  ) async {
     final ext = mimeType.split('/').last;
-    final path = '$userId/avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
-    await _client.storage.from(AppConstants.avatarBucket).uploadBinary(
+    final path = '$userId/${DateTime.now().millisecondsSinceEpoch}.$ext';
+    await _client.storage
+        .from(AppConstants.avatarBucket)
+        .uploadBinary(
           path,
           bytes,
           fileOptions: FileOptions(contentType: mimeType, upsert: true),
@@ -195,25 +220,7 @@ class SupabaseService {
     return _client.storage.from(AppConstants.avatarBucket).getPublicUrl(path);
   }
 
-  Future<UserModel> updateProfile({required String fullName, String? avatarUrl}) async {
-    final response = await _client.auth.updateUser(
-      UserAttributes(
-        data: {
-          'full_name': fullName,
-          if (avatarUrl != null) 'avatar_url': avatarUrl,
-        },
-      ),
-    );
-    final user = response.user!;
-    return UserModel(
-      id: user.id,
-      email: user.email!,
-      fullName: user.userMetadata?['full_name'],
-      avatarUrl: user.userMetadata?['avatar_url'],
-      createdAt: DateTime.now(),
-    );
-  }
-
+  //  Verificar sesión activa
   User? get currentUser => _client.auth.currentUser;
 
   bool get isSignedIn => currentUser != null;

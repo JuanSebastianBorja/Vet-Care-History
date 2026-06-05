@@ -46,7 +46,6 @@ class NotificationService {
     const settings = InitializationSettings(
       android: androidSettings,
       iOS: iosSettings,
-      macOS: iosSettings,
     );
 
     await _notifications.initialize(
@@ -60,17 +59,15 @@ class NotificationService {
     // Solicitar permisos explícitos (Android 13+)
     await _requestPermissions();
 
-    // Inicializar WorkManager para resincronizar notificaciones al reiniciar (solo en Android/iOS)
-    if (Platform.isAndroid || Platform.isIOS) {
-      await Workmanager().initialize(_backgroundTaskRunner, isInDebugMode: false);
+    // Inicializar WorkManager para resincronizar notificaciones al reiniciar
+    await Workmanager().initialize(_backgroundTaskRunner, isInDebugMode: false);
 
-      // Registrar tarea periódica para verificar recordatorios (ej. cada 12 horas)
-      await Workmanager().registerPeriodicTask(
-        'notification-sync',
-        _backgroundTask,
-        frequency: const Duration(hours: 12),
-      );
-    }
+    // Registrar tarea periódica para verificar recordatorios (ej. cada 12 horas)
+    await Workmanager().registerPeriodicTask(
+      'notification-sync',
+      _backgroundTask,
+      frequency: const Duration(hours: 12),
+    );
 
     _isInitialized = true;
   }
@@ -123,12 +120,6 @@ class NotificationService {
       await _notifications
           .resolvePlatformSpecificImplementation<
             IOSFlutterLocalNotificationsPlugin
-          >()
-          ?.requestPermissions(alert: true, badge: true, sound: true);
-    } else if (Platform.isMacOS) {
-      await _notifications
-          .resolvePlatformSpecificImplementation<
-            MacOSFlutterLocalNotificationsPlugin
           >()
           ?.requestPermissions(alert: true, badge: true, sound: true);
     }

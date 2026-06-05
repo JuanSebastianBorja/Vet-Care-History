@@ -1,35 +1,36 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:async';
 import '../data/models/consultation_model.dart';
 import '../data/models/vaccine_model.dart';
 import '../data/models/deworming_model.dart';
 import '../data/models/appointment_model.dart';
+import '../data/local/app_database.dart';
 import '../data/repositories/consultation_repository.dart';
 import '../data/repositories/vaccine_repository.dart';
 import '../data/repositories/deworming_repository.dart';
-import '../data/local/app_database.dart';
-import '../data/services/appointment_service.dart';
+import '../data/repositories/appointment_repository.dart';
 import '../data/services/notification_service.dart';
 
 class HistoryViewModel extends ChangeNotifier {
-  final ConsultationRepository _consultationRepository = ConsultationRepository();
+  final AppDatabase _localDb = AppDatabase();
+  final ConsultationRepository _consultationRepository =
+      ConsultationRepository();
   final VaccineRepository _vaccineRepository = VaccineRepository();
   final DewormingRepository _dewormingRepository = DewormingRepository();
-  final AppointmentService _appointmentService = AppointmentService();
+  final AppointmentRepository _appointmentRepository = AppointmentRepository();
   final NotificationService _notifService = NotificationService();
-  final AppDatabase _localDb = AppDatabase();
+  StreamSubscription<int>? _pendingSyncSub;
 
   List<ConsultationModel> _consultations = [];
   List<VaccineModel> _vaccines = [];
   List<DewormingModel> _dewormings = [];
   List<AppointmentModel> _appointments = [];
+  Set<String> _consultationIdsWithPendingPhotos = {};
   bool _isLoading = false;
   String? _error;
-
   int _pendingSyncCount = 0;
-  Set<String> _consultationIdsWithPendingPhotos = {};
-  StreamSubscription<int>? _syncSubscription;
 
   List<ConsultationModel> get consultations => _consultations;
   List<VaccineModel> get vaccines => _vaccines;
@@ -38,20 +39,11 @@ class HistoryViewModel extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
   int get pendingSyncCount => _pendingSyncCount;
-  Set<String> get consultationIdsWithPendingPhotos => _consultationIdsWithPendingPhotos;
-
-  List<AppointmentModel> get tomorrowAppointments {
-    final tomorrow = DateTime.now().add(const Duration(days: 1));
-    return _appointments.where((a) {
-      if (a.status != 'pending') return false;
-      return a.appointmentDate.year == tomorrow.year &&
-          a.appointmentDate.month == tomorrow.month &&
-          a.appointmentDate.day == tomorrow.day;
-    }).toList();
-  }
+  bool hasPendingConsultationPhotos(String consultationId) =>
+      _consultationIdsWithPendingPhotos.contains(consultationId);
 
   HistoryViewModel() {
-    _syncSubscription = _localDb.watchPendingSyncCount().listen((count) {
+    _pendingSyncSub = _localDb.watchPendingSyncCount().listen((count) {
       _pendingSyncCount = count;
       notifyListeners();
     });
@@ -59,7 +51,8 @@ class HistoryViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
-    _syncSubscription?.cancel();
+    _pendingSyncSub?.cancel();
+    _localDb.close();
     super.dispose();
   }
 
@@ -72,7 +65,7 @@ class HistoryViewModel extends ChangeNotifier {
         _consultationRepository.fetchConsultations(petId),
         _vaccineRepository.fetchVaccines(petId),
         _dewormingRepository.fetchDewormings(petId),
-        _appointmentService.fetchAppointments(petId),
+        _appointmentRepository.fetchAppointments(petId),
       ]);
       _consultations = results[0] as List<ConsultationModel>;
       _vaccines = results[1] as List<VaccineModel>;
@@ -86,8 +79,6 @@ class HistoryViewModel extends ChangeNotifier {
     _isLoading = false;
     notifyListeners();
   }
-
-  // ================= CONSULTAS =================
 
   Future<bool> addConsultation(ConsultationModel c, List<XFile> photos) async {
     _error = null;
@@ -105,10 +96,17 @@ class HistoryViewModel extends ChangeNotifier {
   }
 
   Future<bool> updateConsultation(
-      ConsultationModel c, List<XFile> newPhotos, List<String> photoIdsToDelete) async {
+    ConsultationModel c,
+    List<XFile> newPhotos,
+    List<String> photoIdsToDelete,
+  ) async {
     _error = null;
     try {
-      final updated = await _consultationRepository.updateConsultation(c, newPhotos, photoIdsToDelete);
+      final updated = await _consultationRepository.updateConsultation(
+        c,
+        newPhotos,
+        photoIdsToDelete,
+      );
       final idx = _consultations.indexWhere((x) => x.id == c.id);
       if (idx != -1) _consultations[idx] = updated;
       await _refreshPendingPhotosForPet(c.petId);
@@ -276,55 +274,6 @@ class HistoryViewModel extends ChangeNotifier {
     }
   }
 
-  // ================= CITAS (ONLINE) =================
-
-  Future<bool> addAppointment(AppointmentModel a) async {
-    _error = null;
-    try {
-      final saved = await _appointmentService.addAppointment(a);
-      _appointments.add(saved);
-      _appointments.sort((x, y) => x.appointmentDate.compareTo(y.appointmentDate));
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _error = e.toString().replaceAll('Exception: ', '');
-      notifyListeners();
-      return false;
-    }
-  }
-
-  Future<bool> updateAppointment(AppointmentModel a) async {
-    _error = null;
-    try {
-      final updated = await _appointmentService.updateAppointment(a);
-      final idx = _appointments.indexWhere((x) => x.id == a.id);
-      if (idx != -1) {
-        _appointments[idx] = updated;
-        _appointments.sort((x, y) => x.appointmentDate.compareTo(y.appointmentDate));
-      }
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _error = e.toString().replaceAll('Exception: ', '');
-      notifyListeners();
-      return false;
-    }
-  }
-
-  Future<bool> deleteAppointment(String id) async {
-    _error = null;
-    try {
-      await _appointmentService.deleteAppointment(id);
-      _appointments.removeWhere((a) => a.id == id);
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _error = e.toString().replaceAll('Exception: ', '');
-      notifyListeners();
-      return false;
-    }
-  }
-
   // ================= AUXILIARES DE NOTIFICACIÓN =================
 
   Future<void> _scheduleVaccineNotification(
@@ -382,6 +331,96 @@ class HistoryViewModel extends ChangeNotifier {
       scheduledDate: scheduleDate,
       channelId: 'vetcare_dewormings',
       payload: '{"type":"deworming","petId":"${d.petId}","recordId":"${d.id}"}',
+    );
+  }
+
+  // ================= CITAS =================
+
+  Future<bool> addAppointment(AppointmentModel a, String petName) async {
+    _error = null;
+    try {
+      final saved = await _appointmentRepository.addAppointment(a);
+      _appointments.add(saved);
+      _appointments.sort((x, y) => x.appointmentDatetime.compareTo(y.appointmentDatetime));
+
+      // Programar recordatorio de cita (24h antes)
+      await _scheduleAppointmentNotification(saved, petName);
+
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString().replaceAll('Exception: ', '');
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> updateAppointment(AppointmentModel a, String petName) async {
+    _error = null;
+    try {
+      final updated = await _appointmentRepository.updateAppointment(a);
+      final idx = _appointments.indexWhere((x) => x.id == a.id);
+      if (idx != -1) {
+        _appointments[idx] = updated;
+        _appointments.sort((x, y) => x.appointmentDatetime.compareTo(y.appointmentDatetime));
+      }
+
+      // Re-programar recordatorio (cancelar anterior y agendar nuevo)
+      final notifId = NotificationService.generateNotificationId('appointment', updated.id);
+      await _notifService.cancelNotification(notifId);
+      await _scheduleAppointmentNotification(updated, petName);
+
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString().replaceAll('Exception: ', '');
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> deleteAppointment(String id) async {
+    _error = null;
+    try {
+      // Cancelar recordatorio
+      final notifId = NotificationService.generateNotificationId('appointment', id);
+      await _notifService.cancelNotification(notifId);
+
+      await _appointmentRepository.deleteAppointment(id);
+      _appointments.removeWhere((a) => a.id == id);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString().replaceAll('Exception: ', '');
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<void> _scheduleAppointmentNotification(
+    AppointmentModel a,
+    String petName,
+  ) async {
+    // Recordatorio de cita 24h antes
+    final scheduleDate = a.appointmentDatetime.subtract(const Duration(hours: 24));
+    final now = DateTime.now();
+
+    if (scheduleDate.isBefore(now)) {
+      // Si ya falta menos de 24h, no programamos o se programaría en el pasado.
+      return;
+    }
+
+    final id = NotificationService.generateNotificationId('appointment', a.id);
+    final title = '📅 Cita veterinaria mañana';
+    final body = '$petName tiene una cita mañana a las ${a.timeStr} con ${a.veterinarianName ?? "el veterinario"}. Motivo: ${a.motive}.';
+
+    await _notifService.scheduleNotification(
+      id: id,
+      title: title,
+      body: body,
+      scheduledDate: scheduleDate,
+      channelId: 'vetcare_vaccines', // Reutilizamos canal de vacunas/avisos
+      payload: '{"type":"appointment","petId":"${a.petId}","recordId":"${a.id}"}',
     );
   }
 

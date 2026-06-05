@@ -27,40 +27,41 @@ class PetModel {
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
   factory PetModel.fromMap(Map<String, dynamic> map) => PetModel(
-        id: map['id'] as String,
-        userId: map['user_id'] as String,
-        name: map['name'] as String,
-        species: map['species'] as String,
-        breed: map['breed'] as String?,
-        birthDate: map['birth_date'] != null
-            ? DateTime.parse(map['birth_date'] as String)
-            : null,
-        sex: map['sex'] as String?,
-        photoUrl: map['photo_url'] as String?,
-        notificationsEnabled: (map['notifications_enabled'] as bool?) ?? true,
-        createdAt: DateTime.parse(map['created_at'] as String),
-      );
+    id: map['id'] as String,
+    userId: map['user_id'] as String,
+    name: map['name'] as String,
+    species: map['species'] as String,
+    breed: map['breed'] as String?,
+    birthDate: map['birth_date'] != null
+        ? DateTime.parse(map['birth_date'] as String)
+        : null,
+    sex: map['sex'] as String?,
+    photoUrl: map['photo_url'] as String?,
+    notificationsEnabled: (map['notifications_enabled'] as bool?) ?? true,
+    createdAt: DateTime.parse(map['created_at'] as String),
+  );
 
   Map<String, dynamic> toInsertMap() => {
-        'user_id': userId,
-        'name': name,
-        'species': species,
-        if (breed != null && breed!.isNotEmpty) 'breed': breed,
-        if (birthDate != null) 'birth_date': _toIsoDate(birthDate!),
-        if (sex != null) 'sex': sex,
-        if (photoUrl != null) 'photo_url': photoUrl,
-        'notifications_enabled': notificationsEnabled,
-      };
+    if (id.isNotEmpty) 'id': id,
+    'user_id': userId,
+    'name': name,
+    'species': species,
+    if (breed != null && breed!.isNotEmpty) 'breed': breed,
+    if (birthDate != null) 'birth_date': _toIsoDate(birthDate!),
+    if (sex != null) 'sex': sex,
+    if (photoUrl != null) 'photo_url': photoUrl,
+    'notifications_enabled': notificationsEnabled,
+  };
 
   Map<String, dynamic> toUpdateMap() => {
-        'name': name,
-        'species': species,
-        'breed': (breed != null && breed!.isNotEmpty) ? breed : null,
-        'birth_date': birthDate != null ? _toIsoDate(birthDate!) : null,
-        'sex': sex,
-        'photo_url': photoUrl,
-        'notifications_enabled': notificationsEnabled,
-      };
+    'name': name,
+    'species': species,
+    'breed': (breed != null && breed!.isNotEmpty) ? breed : null,
+    'birth_date': birthDate != null ? _toIsoDate(birthDate!) : null,
+    'sex': sex,
+    'photo_url': photoUrl,
+    'notifications_enabled': notificationsEnabled,
+  };
 
   PetModel copyWith({
     String? id,
@@ -75,24 +76,24 @@ class PetModel {
     bool clearPhotoUrl = false,
     bool? notificationsEnabled,
     DateTime? createdAt,
-  }) =>
-      PetModel(
-        id: id ?? this.id,
-        userId: userId ?? this.userId,
-        name: name ?? this.name,
-        species: species ?? this.species,
-        breed: breed ?? this.breed,
-        birthDate: clearBirthDate ? null : (birthDate ?? this.birthDate),
-        sex: sex ?? this.sex,
-        photoUrl: clearPhotoUrl ? null : (photoUrl ?? this.photoUrl),
-        notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
-        createdAt: createdAt ?? this.createdAt,
-      );
+  }) => PetModel(
+    id: id ?? this.id,
+    userId: userId ?? this.userId,
+    name: name ?? this.name,
+    species: species ?? this.species,
+    breed: breed ?? this.breed,
+    birthDate: clearBirthDate ? null : (birthDate ?? this.birthDate),
+    sex: sex ?? this.sex,
+    photoUrl: clearPhotoUrl ? null : (photoUrl ?? this.photoUrl),
+    notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
+    createdAt: createdAt ?? this.createdAt,
+  );
 
   String get ageString {
     if (birthDate == null) return 'Sin edad';
     final now = DateTime.now();
-    final years = now.year -
+    final years =
+        now.year -
         birthDate!.year -
         (now.month < birthDate!.month ||
                 (now.month == birthDate!.month && now.day < birthDate!.day)

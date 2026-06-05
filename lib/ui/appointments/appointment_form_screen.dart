@@ -5,9 +5,15 @@ import '../../viewmodels/history_viewmodel.dart';
 
 class AppointmentFormScreen extends StatefulWidget {
   final String petId;
+  final String petName;
   final AppointmentModel? appointment;
 
-  const AppointmentFormScreen({super.key, required this.petId, this.appointment});
+  const AppointmentFormScreen({
+    super.key,
+    required this.petId,
+    required this.petName,
+    this.appointment,
+  });
 
   @override
   State<AppointmentFormScreen> createState() => _AppointmentFormScreenState();
@@ -15,12 +21,12 @@ class AppointmentFormScreen extends StatefulWidget {
 
 class _AppointmentFormScreenState extends State<AppointmentFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _vetCtrl = TextEditingController();
   final _motiveCtrl = TextEditingController();
+  final _vetCtrl = TextEditingController();
   final _notesCtrl = TextEditingController();
 
-  DateTime? _selectedDate;
-  TimeOfDay? _selectedTime;
+  DateTime _selectedDate = DateTime.now().add(const Duration(days: 1));
+  TimeOfDay _selectedTime = const TimeOfDay(hour: 9, minute: 0);
   String _status = 'pending';
   bool _saving = false;
 
@@ -31,19 +37,22 @@ class _AppointmentFormScreenState extends State<AppointmentFormScreen> {
     super.initState();
     if (_isEditing) {
       final a = widget.appointment!;
-      _vetCtrl.text = a.vetName ?? '';
       _motiveCtrl.text = a.motive;
+      _vetCtrl.text = a.veterinarianName ?? '';
       _notesCtrl.text = a.notes ?? '';
-      _selectedDate = a.appointmentDate;
-      _selectedTime = TimeOfDay.fromDateTime(a.appointmentDate);
+      _selectedDate = a.appointmentDatetime;
+      _selectedTime = TimeOfDay(
+        hour: a.appointmentDatetime.hour,
+        minute: a.appointmentDatetime.minute,
+      );
       _status = a.status;
     }
   }
 
   @override
   void dispose() {
-    _vetCtrl.dispose();
     _motiveCtrl.dispose();
+    _vetCtrl.dispose();
     _notesCtrl.dispose();
     super.dispose();
   }
@@ -51,7 +60,7 @@ class _AppointmentFormScreenState extends State<AppointmentFormScreen> {
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDate ?? DateTime.now(),
+      initialDate: _selectedDate,
       firstDate: DateTime.now().subtract(const Duration(days: 365)),
       lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
       builder: (ctx, child) => Theme(
@@ -69,7 +78,7 @@ class _AppointmentFormScreenState extends State<AppointmentFormScreen> {
   Future<void> _pickTime() async {
     final picked = await showTimePicker(
       context: context,
-      initialTime: _selectedTime ?? TimeOfDay.now(),
+      initialTime: _selectedTime,
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
           colorScheme: const ColorScheme.light(primary: Color(0xFF2E7D32)),
@@ -84,33 +93,21 @@ class _AppointmentFormScreenState extends State<AppointmentFormScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedDate == null || _selectedTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Por favor, selecciona la fecha y la hora de la cita'),
-          backgroundColor: Colors.red.shade600,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ),
-      );
-      return;
-    }
-
     setState(() => _saving = true);
 
-    final finalDateTime = DateTime(
-      _selectedDate!.year,
-      _selectedDate!.month,
-      _selectedDate!.day,
-      _selectedTime!.hour,
-      _selectedTime!.minute,
+    final appointmentDateTime = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      _selectedTime.hour,
+      _selectedTime.minute,
     );
 
-    final a = AppointmentModel(
+    final appointment = AppointmentModel(
       id: widget.appointment?.id ?? '',
       petId: widget.petId,
-      appointmentDate: finalDateTime,
-      vetName: _vetCtrl.text.trim().isEmpty ? null : _vetCtrl.text.trim(),
+      appointmentDatetime: appointmentDateTime,
+      veterinarianName: _vetCtrl.text.trim().isEmpty ? null : _vetCtrl.text.trim(),
       motive: _motiveCtrl.text.trim(),
       notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
       status: _status,
@@ -120,9 +117,9 @@ class _AppointmentFormScreenState extends State<AppointmentFormScreen> {
     final vm = context.read<HistoryViewModel>();
     final bool ok;
     if (_isEditing) {
-      ok = await vm.updateAppointment(a);
+      ok = await vm.updateAppointment(appointment, widget.petName);
     } else {
-      ok = await vm.addAppointment(a);
+      ok = await vm.addAppointment(appointment, widget.petName);
     }
 
     if (!mounted) return;
@@ -136,7 +133,9 @@ class _AppointmentFormScreenState extends State<AppointmentFormScreen> {
           content: Text(vm.error ?? 'Error al guardar la cita'),
           backgroundColor: Colors.red.shade600,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       );
     }
@@ -144,67 +143,78 @@ class _AppointmentFormScreenState extends State<AppointmentFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
+    final themeColor = const Color(0xFF2E7D32);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEditing ? 'Editar Cita' : 'Nueva Cita'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded),
-          onPressed: () => Navigator.pop(context),
-        ),
+        title: Text(_isEditing ? 'Editar cita' : 'Nueva cita'),
+        backgroundColor: themeColor,
+        leading: const BackButton(),
       ),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildSelectorTile(
-                      icon: Icons.calendar_today_rounded,
-                      label: _selectedDate != null
-                          ? '${_selectedDate!.day.toString().padLeft(2, '0')}/${_selectedDate!.month.toString().padLeft(2, '0')}/${_selectedDate!.year}'
-                          : 'Seleccionar Fecha *',
-                      isSelected: _selectedDate != null,
-                      onTap: _pickDate,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildSelectorTile(
-                      icon: Icons.access_time_rounded,
-                      label: _selectedTime != null
-                          ? '${_selectedTime!.hour.toString().padLeft(2, '0')}:${_selectedTime!.minute.toString().padLeft(2, '0')}'
-                          : 'Seleccionar Hora *',
-                      isSelected: _selectedTime != null,
-                      onTap: _pickTime,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
               TextFormField(
                 controller: _motiveCtrl,
                 textCapitalization: TextCapitalization.sentences,
                 decoration: const InputDecoration(
-                  labelText: 'Motivo de la Cita *',
-                  prefixIcon: Icon(Icons.medical_information_outlined),
+                  labelText: 'Motivo de la cita *',
+                  prefixIcon: Icon(Icons.description_outlined),
                 ),
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Ingresa el motivo de la cita' : null,
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? 'El motivo es obligatorio'
+                    : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _vetCtrl,
                 textCapitalization: TextCapitalization.words,
                 decoration: const InputDecoration(
-                  labelText: 'Nombre del Veterinario (opcional)',
-                  prefixIcon: Icon(Icons.person_pin_outlined),
+                  labelText: 'Veterinario / Clínica (opcional)',
+                  prefixIcon: Icon(Icons.local_hospital_outlined),
                 ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _pickerField(
+                      icon: Icons.calendar_today_outlined,
+                      label: 'Fecha',
+                      value: '${_selectedDate.day.toString().padLeft(2, '0')}/${_selectedDate.month.toString().padLeft(2, '0')}/${_selectedDate.year}',
+                      onTap: _pickDate,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _pickerField(
+                      icon: Icons.access_time_outlined,
+                      label: 'Hora',
+                      value: '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}',
+                      onTap: _pickTime,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                initialValue: _status,
+                decoration: const InputDecoration(
+                  labelText: 'Estado',
+                  prefixIcon: Icon(Icons.info_outline),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'pending', child: Text('Pendiente')),
+                  DropdownMenuItem(value: 'completed', child: Text('Completada')),
+                  DropdownMenuItem(value: 'cancelled', child: Text('Cancelada')),
+                ],
+                onChanged: (v) {
+                  if (v != null) setState(() => _status = v);
+                },
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -212,19 +222,18 @@ class _AppointmentFormScreenState extends State<AppointmentFormScreen> {
                 textCapitalization: TextCapitalization.sentences,
                 maxLines: 3,
                 decoration: const InputDecoration(
-                  labelText: 'Notas adicionales (opcional)',
-                  prefixIcon: Icon(Icons.notes_rounded),
+                  labelText: 'Notas / Recomendaciones (opcional)',
+                  prefixIcon: Icon(Icons.sticky_note_2_outlined),
                   alignLabelWithHint: true,
                 ),
               ),
-              if (_isEditing) ...[
-                const SizedBox(height: 24),
-                _buildStatusField(),
-              ],
-              const SizedBox(height: 40),
+              const SizedBox(height: 32),
               SizedBox(
                 height: 52,
                 child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: themeColor,
+                  ),
                   onPressed: _saving ? null : _submit,
                   child: _saving
                       ? const SizedBox(
@@ -235,7 +244,9 @@ class _AppointmentFormScreenState extends State<AppointmentFormScreen> {
                             color: Colors.white,
                           ),
                         )
-                      : Text(_isEditing ? 'Guardar cambios' : 'Registrar cita'),
+                      : Text(
+                          _isEditing ? 'Guardar cambios' : 'Agendar cita',
+                        ),
                 ),
               ),
             ],
@@ -245,14 +256,12 @@ class _AppointmentFormScreenState extends State<AppointmentFormScreen> {
     );
   }
 
-  Widget _buildSelectorTile({
+  Widget _pickerField({
     required IconData icon,
     required String label,
-    required bool isSelected,
+    required String value,
     required VoidCallback onTap,
   }) {
-    final primary = Theme.of(context).colorScheme.primary;
-
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -260,78 +269,35 @@ class _AppointmentFormScreenState extends State<AppointmentFormScreen> {
         decoration: BoxDecoration(
           color: const Color(0xFFF8F8F8),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? primary.withValues(alpha: 0.5) : Colors.grey.shade200,
-            width: isSelected ? 1.5 : 1,
-          ),
+          border: Border.all(color: Colors.grey.shade200),
         ),
         child: Row(
           children: [
-            Icon(
-              icon,
-              color: isSelected ? primary : Colors.grey.shade600,
-              size: 20,
-            ),
-            const SizedBox(width: 12),
+            Icon(icon, color: Colors.grey.shade600, size: 20),
+            const SizedBox(width: 10),
             Expanded(
-              child: Text(
-                label,
-                style: TextStyle(
-                  color: isSelected ? Colors.black87 : Colors.grey.shade500,
-                  fontSize: 14,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                ),
-                overflow: TextOverflow.ellipsis,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildStatusField() {
-    final values = ['pending', 'completed', 'cancelled'];
-    final labels = ['Pendiente', 'Completada', 'Cancelada'];
-    final colors = [const Color(0xFF1565C0), const Color(0xFF2E7D32), Colors.grey.shade600];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Estado de la Cita',
-          style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: List.generate(values.length, (i) {
-            final active = _status == values[i];
-            final color = colors[i];
-            return Expanded(
-              child: Padding(
-                padding: EdgeInsets.only(right: i == 2 ? 0 : 8),
-                child: ChoiceChip(
-                  label: Center(
-                    child: Text(
-                      labels[i],
-                      style: TextStyle(
-                        color: active ? Colors.white : Colors.grey.shade700,
-                        fontWeight: active ? FontWeight.w600 : FontWeight.normal,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                  selected: active,
-                  onSelected: (v) => setState(() => _status = values[i]),
-                  selectedColor: color,
-                  showCheckmark: false,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-              ),
-            );
-          }),
-        ),
-      ],
     );
   }
 }

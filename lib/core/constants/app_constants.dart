@@ -10,8 +10,7 @@ class AppConstants {
       '505055190057-1f6dtnnakg6ke8kkh4enhm448g75dqf0.apps.googleusercontent.com';
   static const String googleAndroidClientId =
       '505055190057-3ac4u41t788li7m77vs4h8bapdt160kr.apps.googleusercontent.com';
-  static const String googleIosClientId =
-      '130899851382-dpnihbtchi50vi48v94r9cfoten5r9dv.apps.googleusercontent.com';
+  static const String googleIosClientId = '';
 
   // Redirect deep link usado por proveedores OAuth como GitHub.
   static const String oauthRedirectUri = 'vetcare://login-callback';

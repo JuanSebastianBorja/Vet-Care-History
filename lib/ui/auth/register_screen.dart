@@ -71,10 +71,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF0F766E), // Teal profundo
-              Color(0xFF042F2E), // Teal muy oscuro/casi negro
-            ],
+            colors: [Color(0xFF0B5945), Color(0xFF10B981)],
           ),
         ),
         child: Column(
@@ -84,11 +81,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: Container(
                 width: double.infinity,
                 decoration: const BoxDecoration(
-                  color: Colors.white,
+                  color: Color(0xFFF6FAF8),
                   borderRadius: BorderRadius.vertical(top: Radius.circular(36)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 15,
+                      offset: Offset(0, -5),
+                    ),
+                  ],
                 ),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(32, 40, 32, 32),
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(28, 36, 28, 28),
                   child: _buildForm(),
                 ),
               ),
@@ -103,26 +108,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return SafeArea(
       bottom: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 16, 28, 28),
+        padding: const EdgeInsets.fromLTRB(20, 20, 28, 28),
         child: Row(
           children: [
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                    color: Colors.white, size: 18),
-              ),
+            IconButton(
+              onPressed: () => Navigator.pop(context),
+              icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                  color: Colors.white),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 8),
             const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Crear Cuenta',
+                  'Crear cuenta',
                   style: TextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.bold,
@@ -130,10 +129,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     letterSpacing: 0.5,
                   ),
                 ),
-                SizedBox(height: 4),
+                SizedBox(height: 2),
                 Text(
-                  'Comienza a cuidar a tus mascotas',
-                  style: TextStyle(fontSize: 13, color: Colors.white70),
+                  'Registra tu expediente clínico',
+                  style: TextStyle(fontSize: 13, color: Colors.white70, fontWeight: FontWeight.w500),
                 ),
               ],
             ),
@@ -155,18 +154,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
               textCapitalization: TextCapitalization.words,
               decoration: const InputDecoration(
                 labelText: 'Nombre completo',
-                prefixIcon: Icon(Icons.person_outlined, color: Color(0xFF0F766E)),
+                prefixIcon: Icon(Icons.person_outlined),
               ),
               validator: (v) =>
                   (v == null || v.trim().isEmpty) ? 'Ingresa tu nombre' : null,
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             TextFormField(
               controller: _emailCtrl,
               keyboardType: TextInputType.emailAddress,
               decoration: const InputDecoration(
                 labelText: 'Correo electrónico',
-                prefixIcon: Icon(Icons.email_outlined, color: Color(0xFF0F766E)),
+                prefixIcon: Icon(Icons.email_outlined),
               ),
               validator: (v) {
                 if (v == null || v.isEmpty) return 'Campo requerido';
@@ -174,19 +173,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 return null;
               },
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             TextFormField(
               controller: _passwordCtrl,
               obscureText: _obscurePass,
               decoration: InputDecoration(
                 labelText: 'Contraseña',
-                prefixIcon: const Icon(Icons.lock_outlined, color: Color(0xFF0F766E)),
+                prefixIcon: const Icon(Icons.lock_outlined),
                 suffixIcon: IconButton(
                   icon: Icon(
                     _obscurePass
                         ? Icons.visibility_outlined
                         : Icons.visibility_off_outlined,
-                    color: Colors.grey,
                   ),
                   onPressed: () => setState(() => _obscurePass = !_obscurePass),
                 ),
@@ -197,19 +195,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 return null;
               },
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             TextFormField(
               controller: _confirmCtrl,
               obscureText: _obscureConfirm,
               decoration: InputDecoration(
                 labelText: 'Confirmar contraseña',
-                prefixIcon: const Icon(Icons.lock_outlined, color: Color(0xFF0F766E)),
+                prefixIcon: const Icon(Icons.lock_outlined),
                 suffixIcon: IconButton(
                   icon: Icon(
                     _obscureConfirm
                         ? Icons.visibility_outlined
                         : Icons.visibility_off_outlined,
-                    color: Colors.grey,
                   ),
                   onPressed: () =>
                       setState(() => _obscureConfirm = !_obscureConfirm),
@@ -221,40 +218,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 return null;
               },
             ),
-            const SizedBox(height: 36),
+            const SizedBox(height: 32),
             SizedBox(
-              height: 56,
+              height: 52,
               child: ElevatedButton(
                 onPressed: vm.isLoading ? null : _submit,
-                style: ElevatedButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  elevation: 2,
-                  shadowColor: const Color(0xFF0F766E).withValues(alpha: 0.3),
-                ),
                 child: vm.isLoading
                     ? const SizedBox(
-                        height: 24,
-                        width: 24,
+                        height: 20,
+                        width: 20,
                         child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
+                          strokeWidth: 2,
                           color: Colors.white,
                         ),
                       )
-                    : const Text(
-                        'Crear Cuenta',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
+                    : const Text('Crear Cuenta'),
               ),
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
                   '¿Ya tienes cuenta? ',
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                  style: TextStyle(color: Colors.grey.shade600),
                 ),
                 GestureDetector(
                   onTap: () {
@@ -268,8 +255,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     'Inicia sesión',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                      color: Color(0xFF0F766E),
+                      color: Color(0xFF2E7D32),
                     ),
                   ),
                 ),

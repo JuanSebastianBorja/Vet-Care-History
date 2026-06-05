@@ -151,6 +151,33 @@ class PendingConsultationPhotos extends Table {
       dateTime().named('created_at').withDefault(currentDateAndTime)();
 }
 
+class LocalAppointments extends Table {
+  TextColumn get id => text()();
+
+  TextColumn get petId => text().named('pet_id')();
+
+  DateTimeColumn get appointmentDatetime => dateTime().named('appointment_datetime')();
+
+  TextColumn get veterinarianName => text().named('veterinarian_name').nullable()();
+
+  TextColumn get motive => text()();
+
+  TextColumn get notes => text().nullable()();
+
+  TextColumn get status => text().withDefault(const Constant('pending'))();
+
+  DateTimeColumn get createdAt => dateTime().named('created_at')();
+
+  TextColumn get syncState =>
+      text().named('sync_state').withDefault(const Constant('synced'))();
+
+  DateTimeColumn get localUpdatedAt =>
+      dateTime().named('local_updated_at').withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
 @DriftDatabase(
   tables: [
     LocalPets,
@@ -159,13 +186,14 @@ class PendingConsultationPhotos extends Table {
     LocalVaccines,
     LocalDewormings,
     PendingConsultationPhotos,
+    LocalAppointments,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(openConnection());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -182,6 +210,9 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 4) {
         await m.createTable(pendingConsultationPhotos);
+      }
+      if (from < 5) {
+        await m.createTable(localAppointments);
       }
     },
   );
@@ -463,5 +494,46 @@ class AppDatabase extends _$AppDatabase {
     return (delete(
       localDewormings,
     )..where((tbl) => tbl.id.equals(dewormingId))).go();
+  }
+
+  Future<List<LocalAppointment>> getAppointmentsForPet(String petId) {
+    return (select(localAppointments)
+          ..where(
+            (tbl) =>
+                tbl.petId.equals(petId) &
+                tbl.syncState.isNotValue('pending_delete'),
+          )
+          ..orderBy([
+            (t) => OrderingTerm(
+              expression: t.appointmentDatetime,
+              mode: OrderingMode.asc,
+            ),
+          ]))
+        .get();
+  }
+
+  Future<LocalAppointment?> getAppointmentById(String id) {
+    return (select(localAppointments)..where((tbl) => tbl.id.equals(id)))
+        .getSingleOrNull();
+  }
+
+  Future<void> upsertAppointment(LocalAppointmentsCompanion companion) {
+    return into(localAppointments).insertOnConflictUpdate(companion);
+  }
+
+  Future<void> replaceAppointmentsForPet(
+    String petId,
+    List<LocalAppointmentsCompanion> items,
+  ) async {
+    await transaction(() async {
+      await (delete(localAppointments)..where((tbl) => tbl.petId.equals(petId))).go();
+      for (final item in items) {
+        await into(localAppointments).insert(item);
+      }
+    });
+  }
+
+  Future<void> deleteAppointment(String id) {
+    return (delete(localAppointments)..where((tbl) => tbl.id.equals(id))).go();
   }
 }

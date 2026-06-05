@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../data/models/pet_model.dart';
-import '../../data/models/user_model.dart';
-import '../../data/models/appointment_model.dart';
-import '../../data/services/appointment_service.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/pet_viewmodel.dart';
-import '../../viewmodels/history_viewmodel.dart';
 import '../auth/login_screen.dart';
 import '../profile/profile_screen.dart';
 import 'pet_detail_screen.dart';
@@ -21,7 +17,6 @@ class PetListScreen extends StatefulWidget {
 
 class _PetListScreenState extends State<PetListScreen> {
   final _searchCtrl = TextEditingController();
-  List<AppointmentModel> _allTomorrowAppointments = [];
 
   static const _species = [
     'Todos',
@@ -45,132 +40,30 @@ class _PetListScreenState extends State<PetListScreen> {
     super.dispose();
   }
 
-  void _load() async {
+  void _load() {
     final uid = context.read<AuthViewModel>().user?.id;
-    if (uid == null) return;
-
-    final petVm = context.read<PetViewModel>();
-    await petVm.loadPets(uid);
-
-    final apptService = AppointmentService();
-    List<AppointmentModel> tomorrowList = [];
-    final tomorrow = DateTime.now().add(const Duration(days: 1));
-
-    for (final pet in petVm.pets) {
-      try {
-        final appointments = await apptService.fetchAppointments(pet.id);
-        final filtered = appointments.where((a) {
-          if (a.status != 'pending') return false;
-          return a.appointmentDate.year == tomorrow.year &&
-              a.appointmentDate.month == tomorrow.month &&
-              a.appointmentDate.day == tomorrow.day;
-        }).toList();
-        tomorrowList.addAll(filtered);
-      } catch (_) {}
-    }
-
-    if (mounted) {
-      setState(() {
-        _allTomorrowAppointments = tomorrowList;
-      });
-
-      if (tomorrowList.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.notifications_active, color: Colors.white),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'Recordatorio: Tienes ${tomorrowList.length} cita(s) programada(s) para mañana.',
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: const Color(0xFF2E7D32),
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 6),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
-      }
-    }
-  }
-
-  void _showRemindersDialog() {
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
-          children: [
-            Icon(Icons.notifications_active_rounded, color: Color(0xFF2E7D32)),
-            SizedBox(width: 10),
-            Text('Avisos de Mañana'),
-          ],
-        ),
-        content: _allTomorrowAppointments.isEmpty
-            ? const Text('No tienes citas programadas para el dia de mañana.')
-            : SizedBox(
-                width: double.maxFinite,
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  itemCount: _allTomorrowAppointments.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
-                  itemBuilder: (ctx, i) {
-                    final a = _allTomorrowAppointments[i];
-                    return Card(
-                      color: const Color(0xFFF5FAF5),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              a.motive,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                            ),
-                            const SizedBox(height: 4),
-                            Text('Hora: ${a.timeStr}', style: const TextStyle(fontSize: 12)),
-                            if (a.vetName != null)
-                              Text('Veterinario: ${a.vetName}', style: const TextStyle(fontSize: 12)),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Entendido'),
-          ),
-        ],
-      ),
-    );
+    if (uid != null) context.read<PetViewModel>().loadPets(uid);
   }
 
   @override
   Widget build(BuildContext context) {
     final authVm = context.watch<AuthViewModel>();
     final petVm = context.watch<PetViewModel>();
+    final firstName = authVm.user?.fullName?.split(' ').first ?? 'Veterinario';
 
     return Scaffold(
       body: CustomScrollView(
         slivers: [
           _AppBarSliver(
-            user: authVm.user,
-            onProfileTap: () {
-              Navigator.push(
+            name: firstName,
+            onLogout: () async {
+              await authVm.logout();
+              if (!context.mounted) return;
+              Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (_) => const ProfileScreen()),
-              ).then((_) => _load());
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+              );
             },
-            onNotificationsTap: _showRemindersDialog,
-            hasReminders: _allTomorrowAppointments.isNotEmpty,
           ),
           SliverToBoxAdapter(
             child: _SearchBar(
@@ -199,16 +92,16 @@ class _PetListScreenState extends State<PetListScreen> {
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE0F2F1),
+                    color: const Color(0xFFFFF8E1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFB2DFDB)),
+                    border: Border.all(color: const Color(0xFFFFE082)),
                   ),
                   child: Row(
                     children: [
                       const Icon(
                         Icons.sync_problem_outlined,
                         size: 18,
-                        color: Color(0xFF00796B),
+                        color: Color(0xFF8D6E63),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
@@ -216,7 +109,7 @@ class _PetListScreenState extends State<PetListScreen> {
                           '${petVm.pendingSyncCount} cambio(s) pendiente(s) de sincronizar',
                           style: const TextStyle(
                             fontSize: 12,
-                            color: Color(0xFF004D40),
+                            color: Color(0xFF5D4037),
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -266,137 +159,54 @@ class _PetListScreenState extends State<PetListScreen> {
 }
 
 class _AppBarSliver extends StatelessWidget {
-  final UserModel? user;
-  final VoidCallback onProfileTap;
-  final VoidCallback onNotificationsTap;
-  final bool hasReminders;
+  final String name;
+  final VoidCallback onLogout;
 
-  const _AppBarSliver({
-    required this.user,
-    required this.onProfileTap,
-    required this.onNotificationsTap,
-    required this.hasReminders,
-  });
+  const _AppBarSliver({required this.name, required this.onLogout});
 
   @override
   Widget build(BuildContext context) {
-    final initials = user?.fullName != null && user!.fullName!.isNotEmpty
-        ? user!.fullName!.trim().split(' ').map((e) => e[0]).take(2).join().toUpperCase()
-        : '?';
-
-    ImageProvider? imageProvider;
-    if (user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty) {
-      imageProvider = NetworkImage(user!.avatarUrl!);
-    }
+    final user = context.watch<AuthViewModel>().user;
+    final avatarUrl = user?.avatarUrl;
 
     return SliverAppBar(
       floating: true,
       snap: true,
-      expandedHeight: 110,
-      backgroundColor: const Color(0xFF0F766E),
-      elevation: 0,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF0F766E),
-                Color(0xFF115E59),
-              ],
-            ),
+      title: Column(
+        children: [
+          const Text('VetCare'),
+          Text(
+            'Hola, $name',
+            style: const TextStyle(fontSize: 12, color: Colors.white70),
           ),
-        ),
-      ),
-      title: Padding(
-        padding: const EdgeInsets.only(top: 8.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'VetCare',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 22,
-                letterSpacing: 0.8,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              user?.fullName != null ? 'Hola, ${user!.fullName!.split(" ").first} 👋' : 'Hola, Veterinario 👋',
-              style: const TextStyle(
-                fontSize: 13,
-                color: Colors.white70,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-          ],
-        ),
+        ],
       ),
       actions: [
-        Padding(
-          padding: const EdgeInsets.only(top: 8.0),
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 4),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Stack(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.notifications_none_rounded, color: Colors.white),
-                  tooltip: 'Avisos',
-                  onPressed: onNotificationsTap,
-                ),
-                if (hasReminders)
-                  Positioned(
-                    top: 10,
-                    right: 10,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFF43F5E),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-              ],
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ProfileScreen()),
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: CircleAvatar(
+              radius: 16,
+              backgroundColor: Colors.white24,
+              backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
+                  ? NetworkImage(avatarUrl)
+                  : null,
+              child: avatarUrl == null || avatarUrl.isEmpty
+                  ? const Icon(Icons.person, size: 18, color: Colors.white)
+                  : null,
             ),
           ),
         ),
-        const SizedBox(width: 4),
-        GestureDetector(
-          onTap: onProfileTap,
-          child: Padding(
-            padding: const EdgeInsets.only(right: 16, top: 8.0),
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1.5),
-                color: Colors.white24,
-              ),
-              child: CircleAvatar(
-                backgroundColor: Colors.transparent,
-                backgroundImage: imageProvider,
-                child: imageProvider == null
-                    ? Text(
-                        initials,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      )
-                    : null,
-              ),
-            ),
-          ),
+        IconButton(
+          icon: const Icon(Icons.logout_rounded),
+          tooltip: 'Cerrar sesión',
+          onPressed: onLogout,
         ),
       ],
     );
@@ -417,27 +227,16 @@ class _SearchBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 10),
-      child: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
-              blurRadius: 15,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: TextField(
-          controller: controller,
-          onChanged: onChanged,
-          decoration: InputDecoration(
-            hintText: 'Buscar mascota...',
-            prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF0F766E)),
-            suffixIcon: controller.text.isNotEmpty
-                ? IconButton(icon: const Icon(Icons.clear), onPressed: onClear)
-                : null,
-          ),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: TextField(
+        controller: controller,
+        onChanged: onChanged,
+        decoration: InputDecoration(
+          hintText: 'Buscar mascota...',
+          prefixIcon: const Icon(Icons.search_rounded),
+          suffixIcon: controller.text.isNotEmpty
+              ? IconButton(icon: const Icon(Icons.clear), onPressed: onClear)
+              : null,
         ),
       ),
     );
@@ -458,92 +257,29 @@ class _SpeciesFilter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 58,
+      height: 52,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         itemCount: species.length,
         separatorBuilder: (ctx, i) => const SizedBox(width: 8),
         itemBuilder: (_, i) {
           final s = species[i];
           final active = selected == s;
-          return GestureDetector(
-            onTap: () => onSelect(s),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                gradient: active
-                    ? const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Color(0xFF0F766E), Color(0xFF0D9488)],
-                      )
-                    : null,
-                color: active ? null : Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: active ? Colors.transparent : const Color(0xFFE2E8F0),
-                  width: 1,
-                ),
-                boxShadow: [
-                  if (active)
-                    BoxShadow(
-                      color: const Color(0xFF0F766E).withValues(alpha: 0.15),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    )
-                  else
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.01),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    _speciesIcon(s),
-                    size: 16,
-                    color: active ? Colors.white : Colors.grey.shade600,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    s,
-                    style: TextStyle(
-                      color: active ? Colors.white : Colors.grey.shade700,
-                      fontWeight: active ? FontWeight.bold : FontWeight.normal,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
+          return FilterChip(
+            label: Text(s),
+            selected: active,
+            onSelected: (_) => onSelect(s),
+            selectedColor: const Color(0xFF2E7D32),
+            checkmarkColor: Colors.white,
+            labelStyle: TextStyle(
+              color: active ? Colors.white : Colors.grey.shade700,
+              fontWeight: active ? FontWeight.w600 : FontWeight.normal,
             ),
           );
         },
       ),
     );
-  }
-
-  IconData _speciesIcon(String s) {
-    switch (s.toLowerCase()) {
-      case 'todos':
-        return Icons.grid_view_rounded;
-      case 'perro':
-        return Icons.pets_rounded;
-      case 'gato':
-        return Icons.catching_pokemon_rounded;
-      case 'ave':
-        return Icons.flutter_dash_rounded;
-      case 'conejo':
-        return Icons.cruelty_free_rounded;
-      case 'reptil':
-        return Icons.bug_report_rounded;
-      default:
-        return Icons.help_outline_rounded;
-    }
   }
 }
 
@@ -561,39 +297,24 @@ class _EmptyState extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 130,
-              height: 130,
+              width: 120,
+              height: 120,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFFCCFBF1), Color(0xFF99F6E4)],
-                ),
-                borderRadius: BorderRadius.circular(65),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF0F766E).withValues(alpha: 0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
+                color: const Color(0xFFE8F5E9),
+                borderRadius: BorderRadius.circular(60),
               ),
-              child: const Icon(
-                Icons.pets_rounded,
-                size: 64,
-                color: Color(0xFF0F766E),
-              ),
+              child: const Icon(Icons.pets, size: 60, color: Color(0xFF2E7D32)),
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: 24),
             const Text(
               'Sin mascotas registradas',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             Text(
-              'Registra a tu primera mascota para llevar\nsu expediente clínico al día.',
+              'Registra a tu primera mascota\npara llevar su historial clínico',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey.shade500, fontSize: 14, height: 1.5),
+              style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
             ),
             const SizedBox(height: 32),
             ElevatedButton.icon(
@@ -627,7 +348,7 @@ class _PetGrid extends StatelessWidget {
           crossAxisCount: 2,
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
-          childAspectRatio: 0.85,
+          childAspectRatio: 0.82,
         ),
       ),
     );
@@ -646,19 +367,7 @@ class _PetCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
+      child: Card(
         clipBehavior: Clip.antiAlias,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -680,10 +389,7 @@ class _PetCard extends StatelessWidget {
         loadingBuilder: (_, child, progress) => progress == null
             ? child
             : Center(
-                child: CircularProgressIndicator(
-                  color: color,
-                  strokeWidth: 2,
-                ),
+                child: CircularProgressIndicator(color: color, strokeWidth: 2),
               ),
       );
     }
@@ -692,9 +398,9 @@ class _PetCard extends StatelessWidget {
 
   Widget _placeholder(Color color) {
     return Container(
-      color: color.withValues(alpha: 0.08),
+      color: color.withValues(alpha: 0.1),
       child: Center(
-        child: Icon(_speciesIcon(pet.species), size: 48, color: color),
+        child: Icon(_speciesIcon(pet.species), size: 52, color: color),
       ),
     );
   }
@@ -704,19 +410,18 @@ class _PetCard extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             pet.name,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B)),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: 4),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
+              color: color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
@@ -724,14 +429,14 @@ class _PetCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 11,
                 color: color,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: 4),
           Text(
             pet.ageString,
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontWeight: FontWeight.w500),
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
           ),
         ],
       ),
@@ -741,15 +446,15 @@ class _PetCard extends StatelessWidget {
   IconData _speciesIcon(String s) {
     switch (s.toLowerCase()) {
       case 'perro':
-        return Icons.pets_rounded;
+        return Icons.pets;
       case 'gato':
-        return Icons.catching_pokemon_rounded;
+        return Icons.catching_pokemon;
       case 'ave':
-        return Icons.flutter_dash_rounded;
+        return Icons.flutter_dash;
       case 'conejo':
-        return Icons.cruelty_free_rounded;
+        return Icons.cruelty_free;
       default:
-        return Icons.pets_rounded;
+        return Icons.pets;
     }
   }
 

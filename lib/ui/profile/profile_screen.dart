@@ -1,8 +1,8 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../viewmodels/auth_viewmodel.dart';
+import '../auth/login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -13,16 +13,17 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController _nameCtrl;
-  XFile? _photo;
-  Uint8List? _photoBytes;
-  bool _saving = false;
+  final _nameCtrl = TextEditingController();
+  final _picker = ImagePicker();
+  bool _isEditing = false;
 
   @override
   void initState() {
     super.initState();
-    final authVm = context.read<AuthViewModel>();
-    _nameCtrl = TextEditingController(text: authVm.user?.fullName ?? '');
+    final user = context.read<AuthViewModel>().user;
+    if (user != null) {
+      _nameCtrl.text = user.fullName ?? '';
+    }
   }
 
   @override
@@ -31,47 +32,71 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.dispose();
   }
 
-  Future<void> _pickPhoto() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
-    if (picked != null) {
-      final bytes = await picked.readAsBytes();
-      setState(() {
-        _photo = picked;
-        _photoBytes = bytes;
-      });
+  Future<void> _pickAndUploadImage() async {
+    final authVm = context.read<AuthViewModel>();
+    try {
+      final image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 600,
+        maxHeight: 600,
+        imageQuality: 85,
+      );
+      if (image == null) return;
+
+      final bytes = await image.readAsBytes();
+      final mime = image.mimeType ?? 'image/jpeg';
+      final ok = await authVm.updateAvatar(bytes, mime);
+
+      if (mounted) {
+        if (ok) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Foto de perfil actualizada con éxito'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(authVm.error ?? 'Error al subir la imagen'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
-  Future<void> _save() async {
+  Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => _saving = true);
-
     final authVm = context.read<AuthViewModel>();
-    final ok = await authVm.updateUserProfile(_nameCtrl.text.trim(), _photo);
-
-    if (!mounted) return;
-    setState(() => _saving = false);
-
-    if (ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Perfil actualizado con exito'),
-          backgroundColor: const Color(0xFF2E7D32),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
-      Navigator.pop(context);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(authVm.error ?? 'Error al actualizar perfil'),
-          backgroundColor: Colors.red.shade600,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
+    final ok = await authVm.updateProfile(_nameCtrl.text.trim());
+    if (mounted) {
+      if (ok) {
+        setState(() => _isEditing = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Perfil actualizado con éxito'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(authVm.error ?? 'Error al actualizar perfil'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -79,154 +104,198 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final authVm = context.watch<AuthViewModel>();
     final user = authVm.user;
-    final primary = Theme.of(context).colorScheme.primary;
 
     if (user == null) {
-      return const Scaffold(body: Center(child: Text('Inicia sesion para continuar')));
-    }
-
-    final initials = user.fullName != null && user.fullName!.isNotEmpty
-        ? user.fullName!.trim().split(' ').map((e) => e[0]).take(2).join().toUpperCase()
-        : '?';
-
-    ImageProvider? imageProvider;
-    if (_photoBytes != null) {
-      imageProvider = MemoryImage(_photoBytes!);
-    } else if (user.avatarUrl != null && user.avatarUrl!.isNotEmpty) {
-      imageProvider = NetworkImage(user.avatarUrl!);
+      return const Scaffold(
+        body: Center(child: Text('Sesión no encontrada')),
+      );
     }
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mi Perfil'),
+        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: GestureDetector(
-                  onTap: _pickPhoto,
-                  child: Stack(
-                    children: [
-                      Container(
-                        width: 140,
-                        height: 140,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: const Color(0xFFE8F5E9),
-                          border: Border.all(color: primary, width: 3),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.08),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            )
-                          ],
-                        ),
-                        child: CircleAvatar(
-                          backgroundColor: Colors.transparent,
-                          backgroundImage: imageProvider,
-                          child: imageProvider == null
-                              ? Text(
-                                  initials,
-                                  style: TextStyle(
-                                    fontSize: 48,
-                                    fontWeight: FontWeight.bold,
-                                    color: primary,
-                                  ),
-                                )
+      body: authVm.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+              child: Column(
+                children: [
+                  // Avatar Section
+                  Center(
+                    child: Stack(
+                      children: [
+                        CircleAvatar(
+                          radius: 65,
+                          backgroundColor: Colors.grey.shade200,
+                          backgroundImage: user.avatarUrl != null && user.avatarUrl!.isNotEmpty
+                              ? NetworkImage(user.avatarUrl!)
+                              : null,
+                          child: user.avatarUrl == null || user.avatarUrl!.isEmpty
+                              ? Icon(Icons.person_rounded, size: 65, color: Colors.grey.shade400)
                               : null,
                         ),
-                      ),
-                      Positioned(
-                        bottom: 4,
-                        right: 4,
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: primary,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
-                          ),
-                          child: const Icon(
-                            Icons.camera_alt_rounded,
-                            size: 20,
-                            color: Colors.white,
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: GestureDetector(
+                            onTap: _pickAndUploadImage,
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).primaryColor,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.15),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.camera_alt_outlined,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 40),
-              TextFormField(
-                controller: _nameCtrl,
-                textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(
-                  labelText: 'Nombre Completo',
-                  prefixIcon: Icon(Icons.person_outline_rounded),
-                ),
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Ingresa tu nombre' : null,
-              ),
-              const SizedBox(height: 20),
-              TextFormField(
-                initialValue: user.email,
-                enabled: false,
-                decoration: InputDecoration(
-                  labelText: 'Correo Electronico',
-                  prefixIcon: const Icon(Icons.email_outlined),
-                  fillColor: Colors.grey.shade100,
-                ),
-              ),
-              const SizedBox(height: 48),
-              SizedBox(
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: _saving ? null : _save,
-                  child: _saving
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
+                  const SizedBox(height: 32),
+
+                  // Form Section
+                  Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Email Field (Read Only)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade500.withValues(alpha: 0.05),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey.shade200),
                           ),
-                        )
-                      : const Text('Guardar cambios'),
-                ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Correo Electrónico',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade500,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                user.email,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey.shade700,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Name Field (Editable)
+                        TextFormField(
+                          controller: _nameCtrl,
+                          enabled: _isEditing,
+                          decoration: InputDecoration(
+                            labelText: 'Nombre completo',
+                            prefixIcon: const Icon(Icons.person_outline),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          validator: (v) =>
+                              (v == null || v.trim().isEmpty) ? 'Ingresa tu nombre' : null,
+                        ),
+                        const SizedBox(height: 32),
+
+                        // Edit / Save Buttons
+                        if (!_isEditing)
+                          ElevatedButton.icon(
+                            onPressed: () => setState(() => _isEditing = true),
+                            icon: const Icon(Icons.edit_outlined),
+                            label: const Text('Editar Perfil'),
+                          )
+                        else
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _isEditing = false;
+                                      _nameCtrl.text = user.fullName ?? '';
+                                    });
+                                  },
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  child: const Text('Cancelar'),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: _saveProfile,
+                                  child: const Text('Guardar'),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                        const SizedBox(height: 48),
+                        Divider(color: Colors.grey.shade200),
+                        const SizedBox(height: 24),
+
+                        // Logout Button
+                        OutlinedButton.icon(
+                          onPressed: () async {
+                            await authVm.logout();
+                            if (context.mounted) {
+                              Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                                (route) => false,
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.logout_rounded),
+                          label: const Text('Cerrar Sesión'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.red.shade600,
+                            side: BorderSide(color: Colors.red.shade200),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 20),
-              OutlinedButton.icon(
-                onPressed: () async {
-                  await authVm.logout();
-                  if (!context.mounted) return;
-                  Navigator.of(context).popUntil((route) => route.isFirst);
-                },
-                icon: const Icon(Icons.logout_rounded, color: Colors.red),
-                label: const Text(
-                  'Cerrar sesion',
-                  style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
-                ),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.red),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 }

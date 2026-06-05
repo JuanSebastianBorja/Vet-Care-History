@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'data/services/app_sync_service.dart';
 import 'viewmodels/auth_viewmodel.dart';
 import 'viewmodels/history_viewmodel.dart';
 import 'viewmodels/pet_viewmodel.dart';
-import 'data/services/app_sync_service.dart';
 import 'ui/auth/login_screen.dart';
 import 'ui/pets/pet_list_screen.dart';
 
@@ -28,24 +28,21 @@ class VetCareApp extends StatelessWidget {
   }
 
   ThemeData _buildTheme() {
-    const primary = Color(0xFF0F766E); // Teal profundo
-    const secondary = Color(0xFF0D9488); // Teal intermedio
-    const accent = Color(0xFFF43F5E); // Coral de acento
-    const background = Color(0xFFF8FAFC); // Gris/azul muy suave
+    const primary = Color(0xFF0B5945);
 
     return ThemeData(
       useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: primary,
-        brightness: Brightness.light,
-      ).copyWith(
-        primary: primary,
-        onPrimary: Colors.white,
-        secondary: secondary,
-        tertiary: accent,
-        surface: Colors.white,
-      ),
-      scaffoldBackgroundColor: background,
+      colorScheme:
+          ColorScheme.fromSeed(
+            seedColor: primary,
+            brightness: Brightness.light,
+          ).copyWith(
+            primary: primary,
+            onPrimary: Colors.white,
+            secondary: const Color(0xFF10B981),
+            surface: Colors.white,
+          ),
+      scaffoldBackgroundColor: const Color(0xFFF6FAF8),
       appBarTheme: const AppBarTheme(
         backgroundColor: primary,
         foregroundColor: Colors.white,
@@ -60,12 +57,11 @@ class VetCareApp extends StatelessWidget {
         iconTheme: IconThemeData(color: Colors.white),
       ),
       cardTheme: CardThemeData(
-        elevation: 2,
-        shadowColor: Colors.black.withValues(alpha: 0.04),
+        elevation: 0,
         color: Colors.white,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: const BorderSide(color: Color(0xFFE2E8F0)),
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: Colors.grey.shade100),
         ),
         margin: EdgeInsets.zero,
       ),
@@ -74,7 +70,7 @@ class VetCareApp extends StatelessWidget {
           backgroundColor: primary,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(14),
           ),
           padding: const EdgeInsets.symmetric(vertical: 16),
           textStyle: const TextStyle(
@@ -87,43 +83,41 @@ class VetCareApp extends StatelessWidget {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFFF8FAFC),
+        fillColor: const Color(0xFFF8F8F8),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade200),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade200),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: primary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: accent),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: accent, width: 2),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red, width: 2),
         ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
       ),
       chipTheme: ChipThemeData(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         padding: const EdgeInsets.symmetric(horizontal: 4),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: primary,
         foregroundColor: Colors.white,
         elevation: 4,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     );
   }

@@ -40,7 +40,32 @@ class _LoginScreenState extends State<LoginScreen> {
           content: Text(vm.error ?? 'Error al iniciar sesión'),
           backgroundColor: Colors.red.shade600,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _googleSignIn() async {
+    final vm = context.read<AuthViewModel>();
+    final ok = await vm.loginWithGoogle();
+    if (!mounted) return;
+    if (ok) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const PetListScreen()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(vm.error ?? 'Error al iniciar sesión con Google'),
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       );
     }
@@ -54,10 +79,7 @@ class _LoginScreenState extends State<LoginScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF0F766E), // Teal profundo
-              Color(0xFF042F2E), // Teal muy oscuro/casi negro
-            ],
+            colors: [Color(0xFF0B5945), Color(0xFF10B981)],
           ),
         ),
         child: Column(
@@ -67,11 +89,19 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Container(
                 width: double.infinity,
                 decoration: const BoxDecoration(
-                  color: Colors.white,
+                  color: Color(0xFFF6FAF8),
                   borderRadius: BorderRadius.vertical(top: Radius.circular(36)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 15,
+                      offset: Offset(0, -5),
+                    ),
+                  ],
                 ),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(32, 40, 32, 32),
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(28, 36, 28, 28),
                   child: _buildForm(),
                 ),
               ),
@@ -86,37 +116,27 @@ class _LoginScreenState extends State<LoginScreen> {
     return SafeArea(
       bottom: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(28, 32, 28, 36),
+        padding: const EdgeInsets.fromLTRB(28, 28, 28, 36),
         child: Column(
           children: [
             Container(
-              width: 96,
-              height: 96,
+              width: 88,
+              height: 88,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.white.withValues(alpha: 0.25),
-                    Colors.white.withValues(alpha: 0.05),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.3),
-                  width: 1.5,
-                ),
+                color: Colors.white.withValues(alpha: 0.18),
+                borderRadius: BorderRadius.circular(26),
+                border: Border.all(color: Colors.white24, width: 1.5),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 15,
-                    offset: const Offset(0, 8),
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
-              child: const Icon(Icons.pets_rounded, size: 54, color: Colors.white),
+              child: const Icon(Icons.pets, size: 48, color: Colors.white),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             const Text(
               'VetCare',
               style: TextStyle(
@@ -126,10 +146,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 letterSpacing: 1.5,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             const Text(
-              'Expediente clínico inteligente para tus mascotas',
-              style: TextStyle(fontSize: 14, color: Colors.white70, height: 1.4),
+              'Expediente clínico para tus mascotas',
+              style: TextStyle(fontSize: 14, color: Colors.white70, fontWeight: FontWeight.w500),
               textAlign: TextAlign.center,
             ),
           ],
@@ -146,27 +166,21 @@ class _LoginScreenState extends State<LoginScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Text(
-              'Iniciar Sesión',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF0F766E),
-              ),
-              textAlign: TextAlign.center,
+              'Iniciar sesión',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
-              'Bienvenido de vuelta a VetCare',
+              'Bienvenido de vuelta',
               style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
-              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 36),
+            const SizedBox(height: 28),
             TextFormField(
               controller: _emailCtrl,
               keyboardType: TextInputType.emailAddress,
               decoration: const InputDecoration(
                 labelText: 'Correo electrónico',
-                prefixIcon: Icon(Icons.email_outlined, color: Color(0xFF0F766E)),
+                prefixIcon: Icon(Icons.email_outlined),
               ),
               validator: (v) {
                 if (v == null || v.isEmpty) return 'Campo requerido';
@@ -174,19 +188,18 @@ class _LoginScreenState extends State<LoginScreen> {
                 return null;
               },
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             TextFormField(
               controller: _passwordCtrl,
               obscureText: _obscure,
               decoration: InputDecoration(
                 labelText: 'Contraseña',
-                prefixIcon: const Icon(Icons.lock_outlined, color: Color(0xFF0F766E)),
+                prefixIcon: const Icon(Icons.lock_outlined),
                 suffixIcon: IconButton(
                   icon: Icon(
                     _obscure
                         ? Icons.visibility_outlined
                         : Icons.visibility_off_outlined,
-                    color: Colors.grey,
                   ),
                   onPressed: () => setState(() => _obscure = !_obscure),
                 ),
@@ -194,62 +207,50 @@ class _LoginScreenState extends State<LoginScreen> {
               validator: (v) =>
                   (v == null || v.isEmpty) ? 'Campo requerido' : null,
             ),
-            const SizedBox(height: 36),
+            const SizedBox(height: 32),
             SizedBox(
-              height: 56,
+              height: 52,
               child: ElevatedButton(
                 onPressed: vm.isLoading ? null : _submit,
-                style: ElevatedButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  elevation: 2,
-                  shadowColor: const Color(0xFF0F766E).withValues(alpha: 0.3),
-                ),
                 child: vm.isLoading
                     ? const SizedBox(
-                        height: 24,
-                        width: 24,
+                        height: 20,
+                        width: 20,
                         child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
+                          strokeWidth: 2,
                           color: Colors.white,
                         ),
                       )
-                    : const Text(
-                        'Iniciar Sesión',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
+                    : const Text('Iniciar Sesión'),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             _buildDivider(),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             _buildGoogleButton(vm),
             const SizedBox(height: 12),
             _buildGithubButton(vm),
-            const SizedBox(height: 28),
+            const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
                   '¿No tienes cuenta? ',
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                  style: TextStyle(color: Colors.grey.shade600),
                 ),
                 GestureDetector(
                   onTap: () {
                     vm.clearError();
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
-                          builder: (_) => const RegisterScreen()),
+                      MaterialPageRoute(builder: (_) => const RegisterScreen()),
                     );
                   },
                   child: const Text(
                     'Regístrate',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                      color: Color(0xFF0F766E),
+                      color: Color(0xFF2E7D32),
                     ),
                   ),
                 ),
@@ -264,29 +265,29 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildDivider() {
     return Row(
       children: [
-        Expanded(child: Divider(color: Colors.grey.shade200, thickness: 1)),
+        Expanded(child: Divider(color: Colors.grey.shade300)),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Text(
             'o continúa con',
-            style: TextStyle(color: Colors.grey.shade400, fontSize: 13, fontWeight: FontWeight.w500),
+            style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
           ),
         ),
-        Expanded(child: Divider(color: Colors.grey.shade200, thickness: 1)),
+        Expanded(child: Divider(color: Colors.grey.shade300)),
       ],
     );
   }
 
   Widget _buildGoogleButton(AuthViewModel vm) {
     return SizedBox(
-      height: 54,
+      height: 52,
       child: OutlinedButton(
         onPressed: vm.isLoading ? null : _googleSignIn,
         style: OutlinedButton.styleFrom(
           backgroundColor: Colors.white,
-          side: const BorderSide(color: Color(0xFFE2E8F0), width: 1.5),
+          side: BorderSide(color: Colors.grey.shade300),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(14),
           ),
         ),
         child: Row(
@@ -296,7 +297,7 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(width: 12),
             const Text(
               'Continuar con Google',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
           ],
         ),
@@ -306,27 +307,26 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildGithubButton(AuthViewModel vm) {
     return SizedBox(
-      height: 54,
-      child: ElevatedButton(
+      height: 52,
+      child: OutlinedButton(
         onPressed: vm.isLoading ? null : _githubSignIn,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF1E293B),
-          foregroundColor: Colors.white,
+        style: OutlinedButton.styleFrom(
+          backgroundColor: const Color(0xFF111111),
+          side: const BorderSide(color: Color(0xFF111111)),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(14),
           ),
-          elevation: 0,
         ),
-        child: const Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.code, color: Colors.white, size: 20),
+            const Icon(Icons.code, color: Colors.white, size: 22),
             const SizedBox(width: 12),
             const Text(
               'Continuar con GitHub',
               style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
                 color: Colors.white,
               ),
             ),
@@ -334,31 +334,6 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
-  }
-
-  Future<void> _googleSignIn() async {
-    final vm = context.read<AuthViewModel>();
-    final ok = await vm.loginWithGoogle();
-    if (!mounted) return;
-    if (ok) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const PetListScreen()),
-      );
-    } else {
-      if (vm.error != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(vm.error!),
-            backgroundColor: Colors.red.shade600,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-        );
-      }
-    }
   }
 
   Future<void> _githubSignIn() async {
@@ -371,23 +346,21 @@ class _LoginScreenState extends State<LoginScreen> {
         MaterialPageRoute(builder: (_) => const PetListScreen()),
       );
     } else {
-      if (vm.error != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(vm.error!),
-            backgroundColor: Colors.red.shade600,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(vm.error ?? 'Error al iniciar sesión con GitHub'),
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
           ),
-        );
-      }
+        ),
+      );
     }
   }
 
   Widget _buildGoogleIcon() {
-    return CustomPaint(size: const Size(20, 20), painter: GoogleIconPainter());
+    return CustomPaint(size: const Size(24, 24), painter: GoogleIconPainter());
   }
 }
 
@@ -396,7 +369,7 @@ class GoogleIconPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint();
     final center = Offset(size.width / 2, size.height / 2);
-    const radius = 9.0;
+    const radius = 11.0;
 
     // Blue top-right
     paint.color = const Color(0xFF4285F4);

@@ -50,8 +50,7 @@ class ConsultationModel {
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
   factory ConsultationModel.fromMap(Map<String, dynamic> map) {
-    final rawPhotos =
-        (map['consultation_photos'] as List<dynamic>?) ?? [];
+    final rawPhotos = (map['consultation_photos'] as List<dynamic>?) ?? [];
     return ConsultationModel(
       id: map['id'] as String,
       petId: map['pet_id'] as String,
@@ -60,47 +59,45 @@ class ConsultationModel {
       diagnosis: map['diagnosis'] as String?,
       treatment: map['treatment'] as String?,
       notes: map['notes'] as String?,
-      photos: rawPhotos
-          .map((p) => ConsultationPhotoModel.fromMap(p))
-          .toList(),
+      photos: rawPhotos.map((p) => ConsultationPhotoModel.fromMap(p)).toList(),
       createdAt: DateTime.parse(map['created_at'] as String),
     );
   }
 
   Map<String, dynamic> toInsertMap() => {
-        'pet_id': petId,
-        'visit_date': _toIsoDate(visitDate),
-        'motive': motive,
-        if (diagnosis != null && diagnosis!.isNotEmpty) 'diagnosis': diagnosis,
-        if (treatment != null && treatment!.isNotEmpty) 'treatment': treatment,
-        if (notes != null && notes!.isNotEmpty) 'notes': notes,
-      };
+    if (id.isNotEmpty) 'id': id,
+    'pet_id': petId,
+    'visit_date': _toIsoDate(visitDate),
+    'motive': motive,
+    if (diagnosis != null && diagnosis!.isNotEmpty) 'diagnosis': diagnosis,
+    if (treatment != null && treatment!.isNotEmpty) 'treatment': treatment,
+    if (notes != null && notes!.isNotEmpty) 'notes': notes,
+  };
 
   Map<String, dynamic> toUpdateMap() => {
-        'visit_date': _toIsoDate(visitDate),
-        'motive': motive,
-        'diagnosis': diagnosis?.isNotEmpty == true ? diagnosis : null,
-        'treatment': treatment?.isNotEmpty == true ? treatment : null,
-        'notes': notes?.isNotEmpty == true ? notes : null,
-      };
+    'visit_date': _toIsoDate(visitDate),
+    'motive': motive,
+    'diagnosis': diagnosis?.isNotEmpty == true ? diagnosis : null,
+    'treatment': treatment?.isNotEmpty == true ? treatment : null,
+    'notes': notes?.isNotEmpty == true ? notes : null,
+  };
 
   ConsultationModel copyWith({
     List<ConsultationPhotoModel>? photos,
     String? diagnosis,
     String? treatment,
     String? notes,
-  }) =>
-      ConsultationModel(
-        id: id,
-        petId: petId,
-        visitDate: visitDate,
-        motive: motive,
-        diagnosis: diagnosis ?? this.diagnosis,
-        treatment: treatment ?? this.treatment,
-        notes: notes ?? this.notes,
-        photos: photos ?? this.photos,
-        createdAt: createdAt,
-      );
+  }) => ConsultationModel(
+    id: id,
+    petId: petId,
+    visitDate: visitDate,
+    motive: motive,
+    diagnosis: diagnosis ?? this.diagnosis,
+    treatment: treatment ?? this.treatment,
+    notes: notes ?? this.notes,
+    photos: photos ?? this.photos,
+    createdAt: createdAt,
+  );
 
   String get formattedDate =>
       '${visitDate.day.toString().padLeft(2, '0')}/${visitDate.month.toString().padLeft(2, '0')}/${visitDate.year}';
@@ -109,8 +106,18 @@ class ConsultationModel {
 
   String get monthStr {
     const months = [
-      'ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN',
-      'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'
+      'ENE',
+      'FEB',
+      'MAR',
+      'ABR',
+      'MAY',
+      'JUN',
+      'JUL',
+      'AGO',
+      'SEP',
+      'OCT',
+      'NOV',
+      'DIC',
     ];
     return months[visitDate.month - 1];
   }
