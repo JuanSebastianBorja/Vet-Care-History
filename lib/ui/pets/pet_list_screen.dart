@@ -189,6 +189,43 @@ class _PetListScreenState extends State<PetListScreen> {
               onSelect: petVm.setSpeciesFilter,
             ),
           ),
+          if (petVm.pendingSyncCount > 0)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 6, 16, 4),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE0F2F1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFB2DFDB)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.sync_problem_outlined,
+                        size: 18,
+                        color: Color(0xFF00796B),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '${petVm.pendingSyncCount} cambio(s) pendiente(s) de sincronizar',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF004D40),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           if (petVm.isLoading)
             const SliverFillRemaining(
               child: Center(

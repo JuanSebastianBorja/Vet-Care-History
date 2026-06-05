@@ -221,6 +221,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
               ),
             ),
+            const SizedBox(height: 20),
+            _buildDivider(),
+            const SizedBox(height: 20),
+            _buildGoogleButton(vm),
+            const SizedBox(height: 12),
+            _buildGithubButton(vm),
             const SizedBox(height: 28),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -254,4 +260,185 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
+
+  Widget _buildDivider() {
+    return Row(
+      children: [
+        Expanded(child: Divider(color: Colors.grey.shade200, thickness: 1)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            'o continúa con',
+            style: TextStyle(color: Colors.grey.shade400, fontSize: 13, fontWeight: FontWeight.w500),
+          ),
+        ),
+        Expanded(child: Divider(color: Colors.grey.shade200, thickness: 1)),
+      ],
+    );
+  }
+
+  Widget _buildGoogleButton(AuthViewModel vm) {
+    return SizedBox(
+      height: 54,
+      child: OutlinedButton(
+        onPressed: vm.isLoading ? null : _googleSignIn,
+        style: OutlinedButton.styleFrom(
+          backgroundColor: Colors.white,
+          side: const BorderSide(color: Color(0xFFE2E8F0), width: 1.5),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildGoogleIcon(),
+            const SizedBox(width: 12),
+            const Text(
+              'Continuar con Google',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGithubButton(AuthViewModel vm) {
+    return SizedBox(
+      height: 54,
+      child: ElevatedButton(
+        onPressed: vm.isLoading ? null : _githubSignIn,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF1E293B),
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: 0,
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.code, color: Colors.white, size: 20),
+            const SizedBox(width: 12),
+            const Text(
+              'Continuar con GitHub',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _googleSignIn() async {
+    final vm = context.read<AuthViewModel>();
+    final ok = await vm.loginWithGoogle();
+    if (!mounted) return;
+    if (ok) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const PetListScreen()),
+      );
+    } else {
+      if (vm.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(vm.error!),
+            backgroundColor: Colors.red.shade600,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _githubSignIn() async {
+    final vm = context.read<AuthViewModel>();
+    final ok = await vm.loginWithGithub();
+    if (!mounted) return;
+    if (ok) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const PetListScreen()),
+      );
+    } else {
+      if (vm.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(vm.error!),
+            backgroundColor: Colors.red.shade600,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  Widget _buildGoogleIcon() {
+    return CustomPaint(size: const Size(20, 20), painter: GoogleIconPainter());
+  }
+}
+
+class GoogleIconPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint();
+    final center = Offset(size.width / 2, size.height / 2);
+    const radius = 9.0;
+
+    // Blue top-right
+    paint.color = const Color(0xFF4285F4);
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -0.3,
+      1.8,
+      false,
+      paint,
+    );
+
+    // Red bottom-right
+    paint.color = const Color(0xFFEA4335);
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      1.5,
+      1.8,
+      false,
+      paint,
+    );
+
+    // Yellow bottom-left
+    paint.color = const Color(0xFFFBBC05);
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      3.3,
+      1.8,
+      false,
+      paint,
+    );
+
+    // Green top-left
+    paint.color = const Color(0xFF34A853);
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      5.1,
+      1.8,
+      false,
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

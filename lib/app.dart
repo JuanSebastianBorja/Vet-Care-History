@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'viewmodels/auth_viewmodel.dart';
 import 'viewmodels/history_viewmodel.dart';
 import 'viewmodels/pet_viewmodel.dart';
+import 'data/services/app_sync_service.dart';
 import 'ui/auth/login_screen.dart';
 import 'ui/pets/pet_list_screen.dart';
 
@@ -135,13 +136,27 @@ class AuthWrapper extends StatefulWidget {
   State<AuthWrapper> createState() => _AuthWrapperState();
 }
 
-class _AuthWrapperState extends State<AuthWrapper> {
+class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AuthViewModel>().checkSession();
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      AppSyncService().syncNow();
+    }
   }
 
   @override

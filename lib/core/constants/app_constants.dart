@@ -1,8 +1,20 @@
 class AppConstants {
   // Crendenciales supabase
-  static const String supabaseUrl = 'https://kzrnuulihgmpayoiiyiu.supabase.co';
+  static const String supabaseUrl = 'https://lhhdccfgtwghacroayfn.supabase.co/';
   static const String supabaseAnonKey =
-      'sb_publishable_0s7KypEkigClj1Gcr294jw_9SK1VYqQ';
+      'sb_publishable_IxMaVZn9dBEsYM0dU9GHow_ySX4gpgW';
+
+  // OAuth de Google
+  // El Web Client ID tambien se usa como serverClientId en Android para obtener idToken.
+  static const String googleWebClientId =
+      '505055190057-1f6dtnnakg6ke8kkh4enhm448g75dqf0.apps.googleusercontent.com';
+  static const String googleAndroidClientId =
+      '505055190057-3ac4u41t788li7m77vs4h8bapdt160kr.apps.googleusercontent.com';
+  static const String googleIosClientId =
+      '130899851382-dpnihbtchi50vi48v94r9cfoten5r9dv.apps.googleusercontent.com';
+
+  // Redirect deep link usado por proveedores OAuth como GitHub.
+  static const String oauthRedirectUri = 'vetcare://login-callback';
 
   // Buckets de Storage
   static const String avatarBucket = 'avatars';

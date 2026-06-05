@@ -55,4 +55,15 @@ class PetService {
         .from(AppConstants.petPhotoBucket)
         .getPublicUrl(path);
   }
+
+  Future<PetModel> toggleNotifications(String petId, bool enabled) async {
+    final data = await _client
+        .from('pets')
+        .update({'notifications_enabled': enabled})
+        .eq('id', petId)
+        .select()
+        .single();
+
+    return PetModel.fromMap(data);
+  }
 }

@@ -342,6 +342,10 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
               child: Column(
                 children: [
                   _buildStatRow(),
+                  if (histVm.pendingSyncCount > 0) ...[
+                    const SizedBox(height: 12),
+                    _buildSyncBanner(histVm.pendingSyncCount),
+                  ],
                   const SizedBox(height: 20),
                   if (histVm.isLoading)
                     const Padding(
@@ -522,6 +526,38 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
           ),
         ],
       );
+
+  Widget _buildSyncBanner(int pendingCount) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE0F2F1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFB2DFDB)),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.sync_problem_outlined,
+            size: 18,
+            color: Color(0xFF00796B),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '$pendingCount cambio(s) pendiente(s) de sincronizar',
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF004D40),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _statCard(IconData icon, String label, String value, Color color) =>
       Expanded(
@@ -881,7 +917,39 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                       ],
                     ),
                   ),
-                  if (c.photos.isNotEmpty)
+                  if (vm.consultationIdsWithPendingPhotos.contains(c.id)) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF3E0),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFFFE0B2)),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            width: 10,
+                            height: 10,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 1.5,
+                              color: Color(0xFFE65100),
+                            ),
+                          ),
+                          SizedBox(width: 6),
+                          Text(
+                            'Subiendo fotos...',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Color(0xFFE65100),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ] else if (c.photos.isNotEmpty) ...[
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 4),
@@ -898,6 +966,7 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                         ],
                       ),
                     ),
+                  ]
                 ],
               ),
               if (c.photos.isNotEmpty) ...[
@@ -996,7 +1065,7 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
               await Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (_) => VaccineFormScreen(petId: _pet.id)),
+                    builder: (_) => VaccineFormScreen(petId: _pet.id, petName: _pet.name)),
               );
               _reload();
             }),
@@ -1081,7 +1150,7 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                     context,
                     MaterialPageRoute(
                       builder: (_) =>
-                          VaccineFormScreen(petId: _pet.id, vaccine: v),
+                          VaccineFormScreen(petId: _pet.id, petName: _pet.name, vaccine: v),
                     ),
                   );
                   _reload();
@@ -1133,7 +1202,7 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
               await Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (_) => DewormingFormScreen(petId: _pet.id)),
+                    builder: (_) => DewormingFormScreen(petId: _pet.id, petName: _pet.name)),
               );
               _reload();
             }),
@@ -1219,7 +1288,7 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                     context,
                     MaterialPageRoute(
                       builder: (_) => DewormingFormScreen(
-                          petId: _pet.id, deworming: d),
+                          petId: _pet.id, petName: _pet.name, deworming: d),
                     ),
                   );
                   _reload();

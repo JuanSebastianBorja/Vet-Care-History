@@ -75,6 +75,48 @@ class AuthViewModel extends ChangeNotifier {
     return false;
   }
 
+  Future<bool> loginWithGoogle() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      _user = await _supabase.signInWithGoogle();
+      if (_user != null) {
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      }
+    } catch (e) {
+      _error = e.toString().replaceAll('Exception: ', '');
+    }
+
+    _isLoading = false;
+    notifyListeners();
+    return false;
+  }
+
+  Future<bool> loginWithGithub() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      _user = await _supabase.signInWithGithub();
+      if (_user != null) {
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      }
+    } catch (e) {
+      _error = e.toString().replaceAll('Exception: ', '');
+    }
+
+    _isLoading = false;
+    notifyListeners();
+    return false;
+  }
+
   Future<bool> updateUserProfile(String fullName, XFile? photo) async {
     _isLoading = true;
     _error = null;

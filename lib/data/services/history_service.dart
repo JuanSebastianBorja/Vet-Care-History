@@ -95,6 +95,28 @@ class HistoryService {
         .getPublicUrl(path);
   }
 
+  Future<String> uploadConsultationPhoto(String consultationId, XFile photo) {
+    return _uploadConsultationPhoto(consultationId, photo);
+  }
+
+  Future<ConsultationPhotoModel> createConsultationPhotoRecord({
+    required String consultationId,
+    required String photoUrl,
+    String? description,
+  }) async {
+    final data = await _client
+        .from('consultation_photos')
+        .insert({
+          'consultation_id': consultationId,
+          'photo_url': photoUrl,
+          if (description != null && description.isNotEmpty)
+            'description': description,
+        })
+        .select()
+        .single();
+    return ConsultationPhotoModel.fromMap(data);
+  }
+
   Future<List<VaccineModel>> fetchVaccines(String petId) async {
     final data = await _client
         .from('vaccines')

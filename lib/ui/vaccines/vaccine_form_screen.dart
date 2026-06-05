@@ -5,9 +5,15 @@ import '../../viewmodels/history_viewmodel.dart';
 
 class VaccineFormScreen extends StatefulWidget {
   final String petId;
+  final String petName;
   final VaccineModel? vaccine;
 
-  const VaccineFormScreen({super.key, required this.petId, this.vaccine});
+  const VaccineFormScreen({
+    super.key,
+    required this.petId,
+    required this.petName,
+    this.vaccine,
+  });
 
   @override
   State<VaccineFormScreen> createState() => _VaccineFormScreenState();
@@ -85,9 +91,9 @@ class _VaccineFormScreenState extends State<VaccineFormScreen> {
     final vm = context.read<HistoryViewModel>();
     final bool ok;
     if (_isEditing) {
-      ok = await vm.updateVaccine(vaccine);
+      ok = await vm.updateVaccine(vaccine, widget.petName);
     } else {
-      ok = await vm.addVaccine(vaccine);
+      ok = await vm.addVaccine(vaccine, widget.petName);
     }
 
     if (!mounted) return;

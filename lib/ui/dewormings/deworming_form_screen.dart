@@ -5,9 +5,15 @@ import '../../viewmodels/history_viewmodel.dart';
 
 class DewormingFormScreen extends StatefulWidget {
   final String petId;
+  final String petName;
   final DewormingModel? deworming;
 
-  const DewormingFormScreen({super.key, required this.petId, this.deworming});
+  const DewormingFormScreen({
+    super.key,
+    required this.petId,
+    required this.petName,
+    this.deworming,
+  });
 
   @override
   State<DewormingFormScreen> createState() => _DewormingFormScreenState();
@@ -96,9 +102,9 @@ class _DewormingFormScreenState extends State<DewormingFormScreen> {
     final vm = context.read<HistoryViewModel>();
     final bool ok;
     if (_isEditing) {
-      ok = await vm.updateDeworming(deworming);
+      ok = await vm.updateDeworming(deworming, widget.petName);
     } else {
-      ok = await vm.addDeworming(deworming);
+      ok = await vm.addDeworming(deworming, widget.petName);
     }
 
     if (!mounted) return;
