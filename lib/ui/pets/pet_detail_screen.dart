@@ -286,61 +286,64 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
 
   Widget _buildStatRow() => Row(
     children: [
-      _statCard(
-        Icons.cake_outlined,
-        'Edad',
-        _pet.ageString,
-        const Color(0xFF1565C0),
-      ),
-      const SizedBox(width: 10),
-      _statCard(
-        Icons.wc_outlined,
-        'Sexo',
-        _pet.sexLabel,
-        const Color(0xFF6A1B9A),
-      ),
-      const SizedBox(width: 10),
-      // Envuelve la tarjeta de Avisos en un GestureDetector
-      GestureDetector(
-        onTap: _toggleNotifications,
+      Expanded(
         child: _statCard(
-          _pet.notificationsEnabled
-              ? Icons.notifications_active_outlined
-              : Icons.notifications_off_outlined,
-          'Avisos',
-          _pet.notificationsEnabled ? 'Activo' : 'Apagado',
-          const Color(0xFF2E7D32),
+          Icons.cake_outlined,
+          'Edad',
+          _pet.ageString,
+          const Color(0xFF1565C0),
+        ),
+      ),
+      const SizedBox(width: 10),
+      Expanded(
+        child: _statCard(
+          Icons.wc_outlined,
+          'Sexo',
+          _pet.sexLabel,
+          const Color(0xFF6A1B9A),
+        ),
+      ),
+      const SizedBox(width: 10),
+      Expanded(
+        child: GestureDetector(
+          onTap: _toggleNotifications,
+          child: _statCard(
+            _pet.notificationsEnabled
+                ? Icons.notifications_active_outlined
+                : Icons.notifications_off_outlined,
+            'Avisos',
+            _pet.notificationsEnabled ? 'Activo' : 'Apagado',
+            const Color(0xFF2E7D32),
+          ),
         ),
       ),
     ],
   );
 
   Widget _statCard(IconData icon, String label, String value, Color color) =>
-      Expanded(
-        child: Card(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-            child: Column(
-              children: [
-                Icon(icon, color: color, size: 22),
-                const SizedBox(height: 6),
-                Text(
-                  label,
-                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+      Card(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+          child: Column(
+            children: [
+              Icon(icon, color: color, size: 22),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                style: const TextStyle(fontSize: 11, color: Colors.grey),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
         ),
       );
@@ -685,14 +688,16 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                 'Aplicada: ${v.applicationDateStr}',
                 style: const TextStyle(fontSize: 12),
               ),
-              Row(
+              Wrap(
+                spacing: 4,
+                runSpacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Text(
                     'Próxima: ${v.nextDueDateStr}',
                     style: TextStyle(fontSize: 12, color: dueColor),
                   ),
-                  if (overdue) ...[
-                    const SizedBox(width: 4),
+                  if (overdue)
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 4,
@@ -711,7 +716,6 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                         ),
                       ),
                     ),
-                  ],
                 ],
               ),
             ],
@@ -829,14 +833,16 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(d.detailStr, style: const TextStyle(fontSize: 12)),
-              Row(
+              Wrap(
+                spacing: 4,
+                runSpacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Text(
                     'Próxima: ${d.nextDueDateStr}',
                     style: TextStyle(fontSize: 12, color: dueColor),
                   ),
-                  if (overdue) ...[
-                    const SizedBox(width: 4),
+                  if (overdue)
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 4,
@@ -855,7 +861,6 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                         ),
                       ),
                     ),
-                  ],
                 ],
               ),
             ],

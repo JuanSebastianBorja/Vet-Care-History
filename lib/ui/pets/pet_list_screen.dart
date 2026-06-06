@@ -373,8 +373,8 @@ class _PetCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(flex: 3, child: _buildPhoto(color)),
-            Expanded(flex: 2, child: _buildInfo(color)),
+            Expanded(child: _buildPhoto(color)),
+            _buildInfo(color),
           ],
         ),
       ),
