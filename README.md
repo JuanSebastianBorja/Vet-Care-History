@@ -42,6 +42,7 @@ VetCare History permite a dueños de mascotas administrar su información clíni
 # Arquitectura del proyecto
 El proyecto sigue la arquitectura MVVM, usando Provider como gestor de estado.
 
+```text
 lib/
 ├── core/
 │   ├── constants/
@@ -59,6 +60,7 @@ lib/
     ├── historial/
     ├── citas/
     └── reporte/
+```
 
 # 🗄️ Base de datos 
 
