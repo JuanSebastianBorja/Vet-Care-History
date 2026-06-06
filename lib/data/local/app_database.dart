@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 
+import 'database_write_queue.dart';
 import 'db_connection.dart';
 
 part 'app_database.g.dart';
@@ -20,6 +21,10 @@ class LocalPets extends Table {
   TextColumn get sex => text().nullable()();
 
   TextColumn get photoUrl => text().named('photo_url').nullable()();
+
+  /// Ruta local de foto pendiente de subir cuando no hay conexion.
+  TextColumn get localPhotoPath =>
+      text().named('local_photo_path').nullable()();
 
   BoolColumn get notificationsEnabled => boolean()
       .named('notifications_enabled')
@@ -151,6 +156,33 @@ class PendingConsultationPhotos extends Table {
       dateTime().named('created_at').withDefault(currentDateAndTime)();
 }
 
+class LocalAppointments extends Table {
+  TextColumn get id => text()();
+
+  TextColumn get petId => text().named('pet_id')();
+
+  DateTimeColumn get appointmentDatetime => dateTime().named('appointment_datetime')();
+
+  TextColumn get veterinarianName => text().named('veterinarian_name').nullable()();
+
+  TextColumn get motive => text()();
+
+  TextColumn get notes => text().nullable()();
+
+  TextColumn get status => text().withDefault(const Constant('pending'))();
+
+  DateTimeColumn get createdAt => dateTime().named('created_at')();
+
+  TextColumn get syncState =>
+      text().named('sync_state').withDefault(const Constant('synced'))();
+
+  DateTimeColumn get localUpdatedAt =>
+      dateTime().named('local_updated_at').withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
 @DriftDatabase(
   tables: [
     LocalPets,
@@ -159,13 +191,38 @@ class PendingConsultationPhotos extends Table {
     LocalVaccines,
     LocalDewormings,
     PendingConsultationPhotos,
+    LocalAppointments,
   ],
 )
 class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(openConnection());
+  AppDatabase._() : super(openConnection());
+
+  static final AppDatabase instance = AppDatabase._();
+
+  factory AppDatabase() => instance;
+
+  bool _inWrite = false;
+
+  Future<T> runWrite<T>(Future<T> Function() action) {
+    return DatabaseWriteQueue.instance.enqueue(() async {
+      return DatabaseWriteQueue.runWithRetry(() async {
+        _inWrite = true;
+        try {
+          return await action();
+        } finally {
+          _inWrite = false;
+        }
+      });
+    });
+  }
+
+  Future<T> _write<T>(Future<T> Function() action) {
+    if (_inWrite) return action();
+    return runWrite(action);
+  }
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -182,6 +239,12 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 4) {
         await m.createTable(pendingConsultationPhotos);
+      }
+      if (from < 5) {
+        await m.createTable(localAppointments);
+      }
+      if (from < 6) {
+        await m.addColumn(localPets, localPets.localPhotoPath);
       }
     },
   );
@@ -215,28 +278,83 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> upsertPet(LocalPetsCompanion companion) {
-    return into(localPets).insertOnConflictUpdate(companion);
+    return _write(
+      () => into(localPets).insertOnConflictUpdate(companion),
+    );
   }
 
   Future<void> markPetDeleted(String petId) {
-    return (update(localPets)..where((tbl) => tbl.id.equals(petId))).write(
-      LocalPetsCompanion(
-        syncState: const Value('pending_delete'),
-        localUpdatedAt: Value(DateTime.now()),
+    return _write(
+      () => (update(localPets)..where((tbl) => tbl.id.equals(petId))).write(
+        LocalPetsCompanion(
+          syncState: const Value('pending_delete'),
+          localUpdatedAt: Value(DateTime.now()),
+        ),
       ),
     );
   }
 
   Future<void> hardDeletePet(String petId) {
-    return (delete(localPets)..where((tbl) => tbl.id.equals(petId))).go();
+    return _write(
+      () => (delete(localPets)..where((tbl) => tbl.id.equals(petId))).go(),
+    );
   }
 
   Future<void> markPetSynced(String petId) {
-    return (update(localPets)..where((tbl) => tbl.id.equals(petId))).write(
-      LocalPetsCompanion(
-        syncState: const Value('synced'),
-        localUpdatedAt: Value(DateTime.now()),
+    return _write(
+      () => (update(localPets)..where((tbl) => tbl.id.equals(petId))).write(
+        LocalPetsCompanion(
+          syncState: const Value('synced'),
+          localUpdatedAt: Value(DateTime.now()),
+        ),
       ),
+    );
+  }
+
+  Future<void> savePetPendingSync({
+    required LocalPetsCompanion pet,
+    required String entityType,
+    required String entityId,
+    required String operation,
+    String? payloadJson,
+  }) {
+    return runWrite(
+      () => transaction(() async {
+        await into(localPets).insertOnConflictUpdate(pet);
+        await into(syncQueue).insert(
+          SyncQueueCompanion.insert(
+            entityType: entityType,
+            entityId: entityId,
+            operation: operation,
+            payloadJson: Value(payloadJson),
+          ),
+        );
+      }),
+    );
+  }
+
+  Future<void> markPetPendingDelete({
+    required String petId,
+    required String entityType,
+    required String entityId,
+    required String operation,
+  }) {
+    return runWrite(
+      () => transaction(() async {
+        await (update(localPets)..where((tbl) => tbl.id.equals(petId))).write(
+          LocalPetsCompanion(
+            syncState: const Value('pending_delete'),
+            localUpdatedAt: Value(DateTime.now()),
+          ),
+        );
+        await into(syncQueue).insert(
+          SyncQueueCompanion.insert(
+            entityType: entityType,
+            entityId: entityId,
+            operation: operation,
+          ),
+        );
+      }),
     );
   }
 
@@ -246,12 +364,14 @@ class AppDatabase extends _$AppDatabase {
     required String operation,
     String? payloadJson,
   }) {
-    return into(syncQueue).insert(
-      SyncQueueCompanion.insert(
-        entityType: entityType,
-        entityId: entityId,
-        operation: operation,
-        payloadJson: Value(payloadJson),
+    return _write(
+      () => into(syncQueue).insert(
+        SyncQueueCompanion.insert(
+          entityType: entityType,
+          entityId: entityId,
+          operation: operation,
+          payloadJson: Value(payloadJson),
+        ),
       ),
     );
   }
@@ -273,17 +393,21 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> markSyncAttemptFailed(int queueId, String error) {
-    return (update(syncQueue)..where((tbl) => tbl.id.equals(queueId))).write(
-      SyncQueueCompanion.custom(
-        attempts: syncQueue.attempts + const Constant(1),
-        lastError: Constant(error),
-        createdAt: Constant(DateTime.now()),
+    return _write(
+      () => (update(syncQueue)..where((tbl) => tbl.id.equals(queueId))).write(
+        SyncQueueCompanion.custom(
+          attempts: syncQueue.attempts + const Constant(1),
+          lastError: Constant(error),
+          createdAt: Constant(DateTime.now()),
+        ),
       ),
     );
   }
 
   Future<void> removeSyncAction(int queueId) {
-    return (delete(syncQueue)..where((tbl) => tbl.id.equals(queueId))).go();
+    return _write(
+      () => (delete(syncQueue)..where((tbl) => tbl.id.equals(queueId))).go(),
+    );
   }
 
   Future<List<LocalConsultation>> getConsultationsForPet(String petId) {
@@ -307,33 +431,39 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> upsertConsultation(LocalConsultationsCompanion companion) {
-    return into(localConsultations).insertOnConflictUpdate(companion);
+    return _write(
+      () => into(localConsultations).insertOnConflictUpdate(companion),
+    );
   }
 
   Future<void> replaceConsultationsForPet(
     String petId,
     List<LocalConsultationsCompanion> items,
-  ) async {
-    await transaction(() async {
-      await (delete(
-        localConsultations,
-      )..where((tbl) => tbl.petId.equals(petId))).go();
-      for (final item in items) {
-        await into(localConsultations).insert(item);
-      }
-    });
+  ) {
+    return runWrite(
+      () => transaction(() async {
+        await (delete(
+          localConsultations,
+        )..where((tbl) => tbl.petId.equals(petId))).go();
+        for (final item in items) {
+          await into(localConsultations).insert(item);
+        }
+      }),
+    );
   }
 
   Future<void> deleteConsultation(String consultationId) {
-    return (delete(
-      localConsultations,
-    )..where((tbl) => tbl.id.equals(consultationId))).go();
+    return _write(
+      () => (delete(
+        localConsultations,
+      )..where((tbl) => tbl.id.equals(consultationId))).go(),
+    );
   }
 
   Future<int> addPendingConsultationPhoto(
     PendingConsultationPhotosCompanion companion,
   ) {
-    return into(pendingConsultationPhotos).insert(companion);
+    return _write(() => into(pendingConsultationPhotos).insert(companion));
   }
 
   Future<List<PendingConsultationPhoto>> getPendingPhotosForConsultation(
@@ -346,15 +476,19 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> deletePendingPhoto(int id) {
-    return (delete(
-      pendingConsultationPhotos,
-    )..where((tbl) => tbl.id.equals(id))).go();
+    return _write(
+      () => (delete(
+        pendingConsultationPhotos,
+      )..where((tbl) => tbl.id.equals(id))).go(),
+    );
   }
 
   Future<void> deletePendingPhotosForConsultation(String consultationId) {
-    return (delete(
-      pendingConsultationPhotos,
-    )..where((tbl) => tbl.consultationId.equals(consultationId))).go();
+    return _write(
+      () => (delete(
+        pendingConsultationPhotos,
+      )..where((tbl) => tbl.consultationId.equals(consultationId))).go(),
+    );
   }
 
   Future<Set<String>> getConsultationIdsWithPendingPhotosForPet(
@@ -396,27 +530,33 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> upsertVaccine(LocalVaccinesCompanion companion) {
-    return into(localVaccines).insertOnConflictUpdate(companion);
+    return _write(
+      () => into(localVaccines).insertOnConflictUpdate(companion),
+    );
   }
 
   Future<void> replaceVaccinesForPet(
     String petId,
     List<LocalVaccinesCompanion> items,
-  ) async {
-    await transaction(() async {
-      await (delete(
-        localVaccines,
-      )..where((tbl) => tbl.petId.equals(petId))).go();
-      for (final item in items) {
-        await into(localVaccines).insert(item);
-      }
-    });
+  ) {
+    return runWrite(
+      () => transaction(() async {
+        await (delete(
+          localVaccines,
+        )..where((tbl) => tbl.petId.equals(petId))).go();
+        for (final item in items) {
+          await into(localVaccines).insert(item);
+        }
+      }),
+    );
   }
 
   Future<void> deleteVaccine(String vaccineId) {
-    return (delete(
-      localVaccines,
-    )..where((tbl) => tbl.id.equals(vaccineId))).go();
+    return _write(
+      () => (delete(
+        localVaccines,
+      )..where((tbl) => tbl.id.equals(vaccineId))).go(),
+    );
   }
 
   Future<List<LocalDeworming>> getDewormingsForPet(String petId) {
@@ -442,26 +582,81 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> upsertDeworming(LocalDewormingsCompanion companion) {
-    return into(localDewormings).insertOnConflictUpdate(companion);
+    return _write(
+      () => into(localDewormings).insertOnConflictUpdate(companion),
+    );
   }
 
   Future<void> replaceDewormingsForPet(
     String petId,
     List<LocalDewormingsCompanion> items,
-  ) async {
-    await transaction(() async {
-      await (delete(
-        localDewormings,
-      )..where((tbl) => tbl.petId.equals(petId))).go();
-      for (final item in items) {
-        await into(localDewormings).insert(item);
-      }
-    });
+  ) {
+    return runWrite(
+      () => transaction(() async {
+        await (delete(
+          localDewormings,
+        )..where((tbl) => tbl.petId.equals(petId))).go();
+        for (final item in items) {
+          await into(localDewormings).insert(item);
+        }
+      }),
+    );
   }
 
   Future<void> deleteDeworming(String dewormingId) {
-    return (delete(
-      localDewormings,
-    )..where((tbl) => tbl.id.equals(dewormingId))).go();
+    return _write(
+      () => (delete(
+        localDewormings,
+      )..where((tbl) => tbl.id.equals(dewormingId))).go(),
+    );
+  }
+
+  Future<List<LocalAppointment>> getAppointmentsForPet(String petId) {
+    return (select(localAppointments)
+          ..where(
+            (tbl) =>
+                tbl.petId.equals(petId) &
+                tbl.syncState.isNotValue('pending_delete'),
+          )
+          ..orderBy([
+            (t) => OrderingTerm(
+              expression: t.appointmentDatetime,
+              mode: OrderingMode.asc,
+            ),
+          ]))
+        .get();
+  }
+
+  Future<LocalAppointment?> getAppointmentById(String id) {
+    return (select(localAppointments)..where((tbl) => tbl.id.equals(id)))
+        .getSingleOrNull();
+  }
+
+  Future<void> upsertAppointment(LocalAppointmentsCompanion companion) {
+    return _write(
+      () => into(localAppointments).insertOnConflictUpdate(companion),
+    );
+  }
+
+  Future<void> replaceAppointmentsForPet(
+    String petId,
+    List<LocalAppointmentsCompanion> items,
+  ) {
+    return runWrite(
+      () => transaction(() async {
+        await (delete(localAppointments)
+              ..where((tbl) => tbl.petId.equals(petId)))
+            .go();
+        for (final item in items) {
+          await into(localAppointments).insert(item);
+        }
+      }),
+    );
+  }
+
+  Future<void> deleteAppointment(String id) {
+    return _write(
+      () => (delete(localAppointments)..where((tbl) => tbl.id.equals(id))).go(),
+    );
   }
 }

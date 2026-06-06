@@ -28,7 +28,7 @@ class VetCareApp extends StatelessWidget {
   }
 
   ThemeData _buildTheme() {
-    const primary = Color(0xFF2E7D32);
+    const primary = Color(0xFF0B5945);
 
     return ThemeData(
       useMaterial3: true,
@@ -39,10 +39,10 @@ class VetCareApp extends StatelessWidget {
           ).copyWith(
             primary: primary,
             onPrimary: Colors.white,
-            secondary: const Color(0xFF66BB6A),
+            secondary: const Color(0xFF10B981),
             surface: Colors.white,
           ),
-      scaffoldBackgroundColor: const Color(0xFFF5FAF5),
+      scaffoldBackgroundColor: const Color(0xFFF6FAF8),
       appBarTheme: const AppBarTheme(
         backgroundColor: primary,
         foregroundColor: Colors.white,

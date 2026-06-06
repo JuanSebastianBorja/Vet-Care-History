@@ -4,6 +4,7 @@ import '../repositories/consultation_repository.dart';
 import '../repositories/pet_repository.dart';
 import '../repositories/vaccine_repository.dart';
 import '../repositories/deworming_repository.dart';
+import '../repositories/appointment_repository.dart';
 
 class AppSyncService {
   static final AppSyncService _instance = AppSyncService._internal();
@@ -15,6 +16,7 @@ class AppSyncService {
   final PetRepository _petRepository = PetRepository();
   final VaccineRepository _vaccineRepository = VaccineRepository();
   final DewormingRepository _dewormingRepository = DewormingRepository();
+  final AppointmentRepository _appointmentRepository = AppointmentRepository();
 
   Timer? _timer;
   bool _isRunning = false;
@@ -24,8 +26,8 @@ class AppSyncService {
     if (_isRunning) return;
     _isRunning = true;
 
-    // Primer intento al iniciar la app.
-    await syncNow();
+    // Primer intento sin bloquear el arranque de la UI.
+    unawaited(syncNow());
 
     // Reintenta en segundo plano para pendientes offline.
     _timer = Timer.periodic(const Duration(seconds: 45), (_) {
@@ -47,6 +49,7 @@ class AppSyncService {
       await _petRepository.syncPendingQueue();
       await _vaccineRepository.syncPendingQueue();
       await _dewormingRepository.syncPendingQueue();
+      await _appointmentRepository.syncPendingQueue();
     } finally {
       _isSyncing = false;
     }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -11,7 +12,7 @@ class SupabaseService {
   factory SupabaseService() => _instance;
   SupabaseService._internal();
 
-  final SupabaseClient _client = Supabase.instance.client;
+  SupabaseClient get _client => Supabase.instance.client;
 
   // Registro
   Future<UserModel?> signUp(
@@ -27,6 +28,9 @@ class SupabaseService {
       );
 
       if (response.user != null) {
+        if (response.user!.identities != null && response.user!.identities!.isEmpty) {
+          throw Exception('Este correo ya tiene una cuenta.');
+        }
         return UserModel(
           id: response.user!.id,
           email: response.user!.email!,
@@ -51,10 +55,22 @@ class SupabaseService {
 
   // Login
   Future<UserModel?> signIn(String email, String password) async {
+    print('🔐 [SupabaseService] signIn iniciado | ${AppConstants.supabaseConfigDebug}');
     try {
-      final response = await _client.auth.signInWithPassword(
-        email: email,
-        password: password,
+      final response = await _client.auth
+          .signInWithPassword(email: email, password: password)
+          .timeout(
+            AppConstants.authRequestTimeout,
+            onTimeout: () {
+              throw TimeoutException(
+                'El servidor no respondió en ${AppConstants.authRequestTimeout.inSeconds}s. '
+                'Revisa tu conexión a internet y la URL de Supabase.',
+              );
+            },
+          );
+
+      print(
+        '🔐 [SupabaseService] signIn respuesta OK | userId=${response.user?.id}',
       );
 
       if (response.user != null) {
@@ -65,10 +81,23 @@ class SupabaseService {
           createdAt: DateTime.now(),
         );
       }
-    } on AuthException {
+
+      print('⚠️ [SupabaseService] signIn: respuesta sin usuario');
+      throw Exception('El servidor respondió pero no devolvió un usuario.');
+    } on AuthException catch (e) {
+      print(
+        '🚨 ERROR CAPTURADO EN LOGIN (AuthException): ${e.message} | '
+        'status=${e.statusCode}',
+      );
       throw Exception('Credenciales inválidas.');
+    } on TimeoutException catch (e) {
+      print('🚨 ERROR CAPTURADO EN LOGIN (Timeout): $e');
+      throw Exception(e.message ?? e.toString());
+    } catch (e, st) {
+      print('🚨 ERROR CAPTURADO EN LOGIN: $e');
+      print('🚨 STACK TRACE signIn: $st');
+      throw Exception('Error de conexión: $e');
     }
-    return null;
   }
 
   // Login con Google
@@ -83,7 +112,7 @@ class SupabaseService {
         clientId: kIsWeb
             ? AppConstants.googleWebClientId
             : (Platform.isIOS || Platform.isMacOS ? iosClientId : null),
-        serverClientId: kIsWeb ? null : AppConstants.googleWebClientId,
+        serverClientId: AppConstants.googleWebClientId,
       );
 
       // Limpia estado anterior para evitar bloqueos silenciosos del flujo.
@@ -185,6 +214,41 @@ class SupabaseService {
       await googleSignIn.disconnect();
     }
     await _client.auth.signOut();
+  }
+
+  // Perfil del usuario
+  Future<Map<String, dynamic>?> fetchProfile(String userId) async {
+    try {
+      final data = await _client.from('profiles').select().eq('id', userId).single();
+      return data;
+    } catch (e) {
+      print('Error fetching profile: $e');
+      return null;
+    }
+  }
+
+  Future<void> updateProfile(String userId, Map<String, dynamic> updates) async {
+    await _client.from('profiles').update(updates).eq('id', userId);
+  }
+
+  Future<String> uploadAvatar(
+    String userId,
+    Uint8List bytes,
+    String mimeType,
+  ) async {
+    final ext = mimeType.split('/').last;
+    final path = '$userId/${DateTime.now().millisecondsSinceEpoch}.$ext';
+    await _client.storage
+        .from(AppConstants.avatarBucket)
+        .uploadBinary(
+          path,
+          bytes,
+          fileOptions: FileOptions(contentType: mimeType, upsert: true),
+        );
+    final publicUrl =
+        _client.storage.from(AppConstants.avatarBucket).getPublicUrl(path);
+    print('🔗 URL DE LA FOTO DE PERFIL: $publicUrl');
+    return publicUrl;
   }
 
   //  Verificar sesión activa

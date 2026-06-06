@@ -4,8 +4,11 @@ import '../../data/models/pet_model.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/pet_viewmodel.dart';
 import '../auth/login_screen.dart';
+import '../profile/profile_screen.dart';
+import '../profile/user_avatar_image.dart';
 import 'pet_detail_screen.dart';
 import 'pet_form_screen.dart';
+import 'pet_photo_image.dart';
 
 class PetListScreen extends StatefulWidget {
   const PetListScreen({super.key});
@@ -125,7 +128,11 @@ class _PetListScreenState extends State<PetListScreen> {
               ),
             )
           else if (petVm.pets.isEmpty)
-            SliverFillRemaining(child: _EmptyState(onAdd: _openForm))
+            SliverFillRemaining(
+              child: petVm.hasPets
+                  ? const _NoSearchResultsState()
+                  : _EmptyState(onAdd: _openForm),
+            )
           else
             _PetGrid(
               pets: petVm.pets,
@@ -165,6 +172,10 @@ class _AppBarSliver extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final authVm = context.watch<AuthViewModel>();
+    final user = authVm.user;
+    final avatarUrl = user?.avatarUrl;
+
     return SliverAppBar(
       floating: true,
       snap: true,
@@ -178,6 +189,25 @@ class _AppBarSliver extends StatelessWidget {
         ],
       ),
       actions: [
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ProfileScreen()),
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: UserAvatarImage(
+              key: ValueKey('${avatarUrl}_${authVm.avatarVersion}'),
+              avatarUrl: avatarUrl,
+              radius: 16,
+              backgroundColor: Colors.white24,
+              iconColor: Colors.white,
+              iconSize: 18,
+            ),
+          ),
+        ),
         IconButton(
           icon: const Icon(Icons.logout_rounded),
           tooltip: 'Cerrar sesión',
@@ -347,8 +377,8 @@ class _PetCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(flex: 3, child: _buildPhoto(color)),
-            Expanded(flex: 2, child: _buildInfo(color)),
+            Expanded(child: _buildPhoto(color)),
+            _buildInfo(color),
           ],
         ),
       ),
@@ -356,11 +386,11 @@ class _PetCard extends StatelessWidget {
   }
 
   Widget _buildPhoto(Color color) {
-    if (pet.photoUrl != null) {
-      return Image.network(
-        pet.photoUrl!,
+    if (pet.displayPhotoSource != null) {
+      return PetPhotoImage(
+        pet: pet,
         fit: BoxFit.cover,
-        errorBuilder: (ctx, err, stack) => _placeholder(color),
+        placeholder: () => _placeholder(color),
         loadingBuilder: (_, child, progress) => progress == null
             ? child
             : Center(
@@ -448,5 +478,35 @@ class _PetCard extends StatelessWidget {
       default:
         return const Color(0xFF37474F);
     }
+  }
+}
+
+class _NoSearchResultsState extends StatelessWidget {
+  const _NoSearchResultsState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.search_off_rounded, size: 60, color: Colors.grey.shade400),
+            const SizedBox(height: 16),
+            const Text(
+              'No se encontraron mascotas',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Intenta con otro nombre o filtro',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

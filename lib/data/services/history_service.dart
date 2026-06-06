@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/consultation_model.dart';
 import '../models/vaccine_model.dart';
 import '../models/deworming_model.dart';
+import '../models/appointment_model.dart';
 import '../../core/constants/app_constants.dart';
 
 class HistoryService {
@@ -10,7 +11,7 @@ class HistoryService {
   factory HistoryService() => _instance;
   HistoryService._internal();
 
-  final SupabaseClient _client = Supabase.instance.client;
+  SupabaseClient get _client => Supabase.instance.client;
 
   Future<List<ConsultationModel>> fetchConsultations(String petId) async {
     final data = await _client
@@ -190,5 +191,39 @@ class HistoryService {
 
   Future<void> deleteDeworming(String id) async {
     await _client.from('dewormings').delete().eq('id', id);
+  }
+
+  Future<List<AppointmentModel>> fetchAppointments(String petId) async {
+    final data = await _client
+        .from('appointments')
+        .select()
+        .eq('pet_id', petId)
+        .order('appointment_datetime', ascending: true);
+    return (data as List<dynamic>)
+        .map((e) => AppointmentModel.fromMap(e))
+        .toList();
+  }
+
+  Future<AppointmentModel> addAppointment(AppointmentModel a) async {
+    final data = await _client
+        .from('appointments')
+        .insert(a.toInsertMap())
+        .select()
+        .single();
+    return AppointmentModel.fromMap(data);
+  }
+
+  Future<AppointmentModel> updateAppointment(AppointmentModel a) async {
+    final data = await _client
+        .from('appointments')
+        .update(a.toUpdateMap())
+        .eq('id', a.id)
+        .select()
+        .single();
+    return AppointmentModel.fromMap(data);
+  }
+
+  Future<void> deleteAppointment(String id) async {
+    await _client.from('appointments').delete().eq('id', id);
   }
 }

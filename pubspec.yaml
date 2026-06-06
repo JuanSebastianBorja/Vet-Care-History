@@ -56,6 +56,12 @@ dependencies:
   intl: ^0.18.0
   image_picker: ^1.0.0
   uuid: ^4.0.0
+  pdf: ^3.10.8
+  printing: ^5.11.0
+
+  # Google Sign-In
+  google_sign_in: ^6.2.1
+  flutter_timezone: ^5.1.0
 
   # Google Sign-In
   google_sign_in: ^6.2.1

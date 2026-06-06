@@ -8,7 +8,7 @@ class PetService {
   factory PetService() => _instance;
   PetService._internal();
 
-  final SupabaseClient _client = Supabase.instance.client;
+  SupabaseClient get _client => Supabase.instance.client;
 
   Future<List<PetModel>> fetchPets(String userId) async {
     final data = await _client

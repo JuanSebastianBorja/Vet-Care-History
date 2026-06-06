@@ -7,6 +7,7 @@ class PetModel {
   final DateTime? birthDate;
   final String? sex;
   final String? photoUrl;
+  final String? localPhotoPath;
   final bool notificationsEnabled;
   final DateTime createdAt;
 
@@ -19,6 +20,7 @@ class PetModel {
     this.birthDate,
     this.sex,
     this.photoUrl,
+    this.localPhotoPath,
     this.notificationsEnabled = true,
     required this.createdAt,
   });
@@ -74,6 +76,8 @@ class PetModel {
     String? sex,
     String? photoUrl,
     bool clearPhotoUrl = false,
+    String? localPhotoPath,
+    bool clearLocalPhotoPath = false,
     bool? notificationsEnabled,
     DateTime? createdAt,
   }) => PetModel(
@@ -85,9 +89,15 @@ class PetModel {
     birthDate: clearBirthDate ? null : (birthDate ?? this.birthDate),
     sex: sex ?? this.sex,
     photoUrl: clearPhotoUrl ? null : (photoUrl ?? this.photoUrl),
+    localPhotoPath: clearLocalPhotoPath
+        ? null
+        : (localPhotoPath ?? this.localPhotoPath),
     notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
     createdAt: createdAt ?? this.createdAt,
   );
+
+  /// Fuente para mostrar la foto: prioriza archivo local pendiente de sync.
+  String? get displayPhotoSource => localPhotoPath ?? photoUrl;
 
   String get ageString {
     if (birthDate == null) return 'Sin edad';
