@@ -109,7 +109,7 @@ class SupabaseService {
         clientId: kIsWeb
             ? AppConstants.googleWebClientId
             : (Platform.isIOS || Platform.isMacOS ? iosClientId : null),
-        serverClientId: kIsWeb ? null : AppConstants.googleWebClientId,
+        serverClientId: AppConstants.googleWebClientId,
       );
 
       // Limpia estado anterior para evitar bloqueos silenciosos del flujo.
