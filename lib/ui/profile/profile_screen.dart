@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../auth/login_screen.dart';
+import 'user_avatar_image.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -120,31 +121,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: authVm.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
+      body: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
               child: Column(
                 children: [
                   // Avatar Section
                   Center(
-                    child: Stack(
-                      children: [
-                        CircleAvatar(
-                          radius: 65,
-                          backgroundColor: Colors.grey.shade200,
-                          backgroundImage: user.avatarUrl != null && user.avatarUrl!.isNotEmpty
-                              ? NetworkImage(user.avatarUrl!)
-                              : null,
-                          child: user.avatarUrl == null || user.avatarUrl!.isEmpty
-                              ? Icon(Icons.person_rounded, size: 65, color: Colors.grey.shade400)
-                              : null,
-                        ),
+                    child: SizedBox(
+                      width: 130,
+                      height: 130,
+                      child: Stack(
+                        children: [
+                          UserAvatarImage(
+                            key: ValueKey(
+                              '${user.avatarUrl}_${authVm.avatarVersion}',
+                            ),
+                            avatarUrl: user.avatarUrl,
+                            radius: 65,
+                          ),
+                          if (authVm.isUploadingAvatar)
+                            Positioned.fill(
+                              child: DecoratedBox(
+                                decoration: const BoxDecoration(
+                                  color: Colors.black38,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Center(
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              ),
+                            ),
                         Positioned(
                           bottom: 0,
                           right: 0,
                           child: GestureDetector(
-                            onTap: _pickAndUploadImage,
+                            onTap: authVm.isUploadingAvatar
+                                ? null
+                                : _pickAndUploadImage,
                             child: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
@@ -166,7 +182,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ),
                         ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: 32),

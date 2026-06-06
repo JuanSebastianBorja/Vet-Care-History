@@ -12,7 +12,7 @@ class SupabaseService {
   factory SupabaseService() => _instance;
   SupabaseService._internal();
 
-  final SupabaseClient _client = Supabase.instance.client;
+  SupabaseClient get _client => Supabase.instance.client;
 
   // Registro
   Future<UserModel?> signUp(
@@ -52,10 +52,22 @@ class SupabaseService {
 
   // Login
   Future<UserModel?> signIn(String email, String password) async {
+    print('🔐 [SupabaseService] signIn iniciado | ${AppConstants.supabaseConfigDebug}');
     try {
-      final response = await _client.auth.signInWithPassword(
-        email: email,
-        password: password,
+      final response = await _client.auth
+          .signInWithPassword(email: email, password: password)
+          .timeout(
+            AppConstants.authRequestTimeout,
+            onTimeout: () {
+              throw TimeoutException(
+                'El servidor no respondió en ${AppConstants.authRequestTimeout.inSeconds}s. '
+                'Revisa tu conexión a internet y la URL de Supabase.',
+              );
+            },
+          );
+
+      print(
+        '🔐 [SupabaseService] signIn respuesta OK | userId=${response.user?.id}',
       );
 
       if (response.user != null) {
@@ -66,10 +78,23 @@ class SupabaseService {
           createdAt: DateTime.now(),
         );
       }
-    } on AuthException {
-      throw Exception('Credenciales inválidas.');
+
+      print('⚠️ [SupabaseService] signIn: respuesta sin usuario');
+      throw Exception('El servidor respondió pero no devolvió un usuario.');
+    } on AuthException catch (e) {
+      print(
+        '🚨 ERROR CAPTURADO EN LOGIN (AuthException): ${e.message} | '
+        'status=${e.statusCode}',
+      );
+      throw Exception('Credenciales inválidas: ${e.message}');
+    } on TimeoutException catch (e) {
+      print('🚨 ERROR CAPTURADO EN LOGIN (Timeout): $e');
+      throw Exception(e.message ?? e.toString());
+    } catch (e, st) {
+      print('🚨 ERROR CAPTURADO EN LOGIN: $e');
+      print('🚨 STACK TRACE signIn: $st');
+      throw Exception('Error de conexión: $e');
     }
-    return null;
   }
 
   // Login con Google
@@ -217,7 +242,10 @@ class SupabaseService {
           bytes,
           fileOptions: FileOptions(contentType: mimeType, upsert: true),
         );
-    return _client.storage.from(AppConstants.avatarBucket).getPublicUrl(path);
+    final publicUrl =
+        _client.storage.from(AppConstants.avatarBucket).getPublicUrl(path);
+    print('🔗 URL DE LA FOTO DE PERFIL: $publicUrl');
+    return publicUrl;
   }
 
   //  Verificar sesión activa

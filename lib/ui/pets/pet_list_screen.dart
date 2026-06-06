@@ -5,8 +5,10 @@ import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/pet_viewmodel.dart';
 import '../auth/login_screen.dart';
 import '../profile/profile_screen.dart';
+import '../profile/user_avatar_image.dart';
 import 'pet_detail_screen.dart';
 import 'pet_form_screen.dart';
+import 'pet_photo_image.dart';
 
 class PetListScreen extends StatefulWidget {
   const PetListScreen({super.key});
@@ -166,7 +168,8 @@ class _AppBarSliver extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = context.watch<AuthViewModel>().user;
+    final authVm = context.watch<AuthViewModel>();
+    final user = authVm.user;
     final avatarUrl = user?.avatarUrl;
 
     return SliverAppBar(
@@ -191,15 +194,13 @@ class _AppBarSliver extends StatelessWidget {
           },
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: CircleAvatar(
+            child: UserAvatarImage(
+              key: ValueKey('${avatarUrl}_${authVm.avatarVersion}'),
+              avatarUrl: avatarUrl,
               radius: 16,
               backgroundColor: Colors.white24,
-              backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
-                  ? NetworkImage(avatarUrl)
-                  : null,
-              child: avatarUrl == null || avatarUrl.isEmpty
-                  ? const Icon(Icons.person, size: 18, color: Colors.white)
-                  : null,
+              iconColor: Colors.white,
+              iconSize: 18,
             ),
           ),
         ),
@@ -381,11 +382,11 @@ class _PetCard extends StatelessWidget {
   }
 
   Widget _buildPhoto(Color color) {
-    if (pet.photoUrl != null) {
-      return Image.network(
-        pet.photoUrl!,
+    if (pet.displayPhotoSource != null) {
+      return PetPhotoImage(
+        pet: pet,
         fit: BoxFit.cover,
-        errorBuilder: (ctx, err, stack) => _placeholder(color),
+        placeholder: () => _placeholder(color),
         loadingBuilder: (_, child, progress) => progress == null
             ? child
             : Center(

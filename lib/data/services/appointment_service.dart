@@ -10,7 +10,7 @@ class AppointmentService {
   factory AppointmentService() => _instance;
   AppointmentService._internal();
 
-  final SupabaseClient _client = Supabase.instance.client;
+  SupabaseClient get _client => Supabase.instance.client;
 
   Future<File> _getLocalFile() async {
     final dir = await getApplicationDocumentsDirectory();
@@ -33,13 +33,8 @@ class AppointmentService {
     try {
       final file = await _getLocalFile();
       final data = all.map((e) => {
+        ...e.toInsertMap(),
         'id': e.id,
-        'pet_id': e.petId,
-        'appointment_date': e.appointmentDate.toIso8601String(),
-        'vet_name': e.vetName,
-        'motive': e.motive,
-        'notes': e.notes,
-        'status': e.status,
         'created_at': e.createdAt.toIso8601String(),
       }).toList();
       await file.writeAsString(json.encode(data));
@@ -52,12 +47,12 @@ class AppointmentService {
           .from('appointments')
           .select()
           .eq('pet_id', petId)
-          .order('appointment_date', ascending: true);
+          .order('appointment_datetime', ascending: true);
       return (data as List<dynamic>).map((e) => AppointmentModel.fromMap(e)).toList();
     } catch (_) {
       final local = await _readLocal();
       final filtered = local.where((e) => e.petId == petId).toList();
-      filtered.sort((a, b) => a.appointmentDate.compareTo(b.appointmentDate));
+      filtered.sort((a, b) => a.appointmentDatetime.compareTo(b.appointmentDatetime));
       return filtered;
     }
   }

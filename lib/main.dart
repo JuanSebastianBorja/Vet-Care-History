@@ -1,20 +1,14 @@
-import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'core/constants/app_constants.dart';
-import 'data/services/app_sync_service.dart';
-import 'data/services/notification_service.dart';
-import 'app.dart';
+import 'dart:async';
 
-void main() async {
+import 'package:flutter/material.dart';
+
+import 'app.dart';
+import 'core/bootstrap/app_bootstrap.dart';
+
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Supabase.initialize(
-    url: AppConstants.supabaseUrl,
-    anonKey: AppConstants.supabaseAnonKey,
-  );
-
-  await NotificationService().init();
-  await AppSyncService().start();
-
   runApp(const VetCareApp());
+
+  unawaited(AppBootstrap.instance.initialize());
 }

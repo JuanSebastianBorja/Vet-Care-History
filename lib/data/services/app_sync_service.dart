@@ -26,8 +26,8 @@ class AppSyncService {
     if (_isRunning) return;
     _isRunning = true;
 
-    // Primer intento al iniciar la app.
-    await syncNow();
+    // Primer intento sin bloquear el arranque de la UI.
+    unawaited(syncNow());
 
     // Reintenta en segundo plano para pendientes offline.
     _timer = Timer.periodic(const Duration(seconds: 45), (_) {

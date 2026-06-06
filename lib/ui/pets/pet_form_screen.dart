@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -208,6 +209,11 @@ class _PetFormScreenState extends State<PetFormScreen> {
     if (_photoBytes != null) {
       image = DecorationImage(
           image: MemoryImage(_photoBytes!), fit: BoxFit.cover);
+    } else if (widget.pet?.localPhotoPath != null) {
+      image = DecorationImage(
+        image: FileImage(File(widget.pet!.localPhotoPath!)),
+        fit: BoxFit.cover,
+      );
     } else if (widget.pet?.photoUrl != null) {
       image = DecorationImage(
           image: NetworkImage(widget.pet!.photoUrl!), fit: BoxFit.cover);

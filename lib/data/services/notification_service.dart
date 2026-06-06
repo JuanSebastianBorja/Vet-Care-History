@@ -59,17 +59,21 @@ class NotificationService {
     // Solicitar permisos explícitos (Android 13+)
     await _requestPermissions();
 
-    // Inicializar WorkManager para resincronizar notificaciones al reiniciar
+    _isInitialized = true;
+  }
+
+  Future<void> initializeBackgroundTasks() async {
+    if (!_isInitialized) await init();
+
+    // Initialize WorkManager after app is running
     await Workmanager().initialize(_backgroundTaskRunner, isInDebugMode: false);
 
-    // Registrar tarea periódica para verificar recordatorios (ej. cada 12 horas)
+    // Register periodic task
     await Workmanager().registerPeriodicTask(
       'notification-sync',
       _backgroundTask,
       frequency: const Duration(hours: 12),
     );
-
-    _isInitialized = true;
   }
 
   /// Crea los canales de notificación para Android

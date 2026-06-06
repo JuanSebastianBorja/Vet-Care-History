@@ -87,6 +87,17 @@ class $LocalPetsTable extends LocalPets
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _localPhotoPathMeta = const VerificationMeta(
+    'localPhotoPath',
+  );
+  @override
+  late final GeneratedColumn<String> localPhotoPath = GeneratedColumn<String>(
+    'local_photo_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _notificationsEnabledMeta =
       const VerificationMeta('notificationsEnabled');
   @override
@@ -147,6 +158,7 @@ class $LocalPetsTable extends LocalPets
     birthDate,
     sex,
     photoUrl,
+    localPhotoPath,
     notificationsEnabled,
     createdAt,
     syncState,
@@ -215,6 +227,15 @@ class $LocalPetsTable extends LocalPets
       context.handle(
         _photoUrlMeta,
         photoUrl.isAcceptableOrUnknown(data['photo_url']!, _photoUrlMeta),
+      );
+    }
+    if (data.containsKey('local_photo_path')) {
+      context.handle(
+        _localPhotoPathMeta,
+        localPhotoPath.isAcceptableOrUnknown(
+          data['local_photo_path']!,
+          _localPhotoPathMeta,
+        ),
       );
     }
     if (data.containsKey('notifications_enabled')) {
@@ -290,6 +311,10 @@ class $LocalPetsTable extends LocalPets
         DriftSqlType.string,
         data['${effectivePrefix}photo_url'],
       ),
+      localPhotoPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}local_photo_path'],
+      ),
       notificationsEnabled: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}notifications_enabled'],
@@ -324,6 +349,9 @@ class LocalPet extends DataClass implements Insertable<LocalPet> {
   final DateTime? birthDate;
   final String? sex;
   final String? photoUrl;
+
+  /// Ruta local de foto pendiente de subir cuando no hay conexion.
+  final String? localPhotoPath;
   final bool notificationsEnabled;
   final DateTime createdAt;
   final String syncState;
@@ -337,6 +365,7 @@ class LocalPet extends DataClass implements Insertable<LocalPet> {
     this.birthDate,
     this.sex,
     this.photoUrl,
+    this.localPhotoPath,
     required this.notificationsEnabled,
     required this.createdAt,
     required this.syncState,
@@ -361,6 +390,9 @@ class LocalPet extends DataClass implements Insertable<LocalPet> {
     if (!nullToAbsent || photoUrl != null) {
       map['photo_url'] = Variable<String>(photoUrl);
     }
+    if (!nullToAbsent || localPhotoPath != null) {
+      map['local_photo_path'] = Variable<String>(localPhotoPath);
+    }
     map['notifications_enabled'] = Variable<bool>(notificationsEnabled);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['sync_state'] = Variable<String>(syncState);
@@ -384,6 +416,9 @@ class LocalPet extends DataClass implements Insertable<LocalPet> {
       photoUrl: photoUrl == null && nullToAbsent
           ? const Value.absent()
           : Value(photoUrl),
+      localPhotoPath: localPhotoPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(localPhotoPath),
       notificationsEnabled: Value(notificationsEnabled),
       createdAt: Value(createdAt),
       syncState: Value(syncState),
@@ -405,6 +440,7 @@ class LocalPet extends DataClass implements Insertable<LocalPet> {
       birthDate: serializer.fromJson<DateTime?>(json['birthDate']),
       sex: serializer.fromJson<String?>(json['sex']),
       photoUrl: serializer.fromJson<String?>(json['photoUrl']),
+      localPhotoPath: serializer.fromJson<String?>(json['localPhotoPath']),
       notificationsEnabled: serializer.fromJson<bool>(
         json['notificationsEnabled'],
       ),
@@ -425,6 +461,7 @@ class LocalPet extends DataClass implements Insertable<LocalPet> {
       'birthDate': serializer.toJson<DateTime?>(birthDate),
       'sex': serializer.toJson<String?>(sex),
       'photoUrl': serializer.toJson<String?>(photoUrl),
+      'localPhotoPath': serializer.toJson<String?>(localPhotoPath),
       'notificationsEnabled': serializer.toJson<bool>(notificationsEnabled),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'syncState': serializer.toJson<String>(syncState),
@@ -441,6 +478,7 @@ class LocalPet extends DataClass implements Insertable<LocalPet> {
     Value<DateTime?> birthDate = const Value.absent(),
     Value<String?> sex = const Value.absent(),
     Value<String?> photoUrl = const Value.absent(),
+    Value<String?> localPhotoPath = const Value.absent(),
     bool? notificationsEnabled,
     DateTime? createdAt,
     String? syncState,
@@ -454,6 +492,9 @@ class LocalPet extends DataClass implements Insertable<LocalPet> {
     birthDate: birthDate.present ? birthDate.value : this.birthDate,
     sex: sex.present ? sex.value : this.sex,
     photoUrl: photoUrl.present ? photoUrl.value : this.photoUrl,
+    localPhotoPath: localPhotoPath.present
+        ? localPhotoPath.value
+        : this.localPhotoPath,
     notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
     createdAt: createdAt ?? this.createdAt,
     syncState: syncState ?? this.syncState,
@@ -469,6 +510,9 @@ class LocalPet extends DataClass implements Insertable<LocalPet> {
       birthDate: data.birthDate.present ? data.birthDate.value : this.birthDate,
       sex: data.sex.present ? data.sex.value : this.sex,
       photoUrl: data.photoUrl.present ? data.photoUrl.value : this.photoUrl,
+      localPhotoPath: data.localPhotoPath.present
+          ? data.localPhotoPath.value
+          : this.localPhotoPath,
       notificationsEnabled: data.notificationsEnabled.present
           ? data.notificationsEnabled.value
           : this.notificationsEnabled,
@@ -491,6 +535,7 @@ class LocalPet extends DataClass implements Insertable<LocalPet> {
           ..write('birthDate: $birthDate, ')
           ..write('sex: $sex, ')
           ..write('photoUrl: $photoUrl, ')
+          ..write('localPhotoPath: $localPhotoPath, ')
           ..write('notificationsEnabled: $notificationsEnabled, ')
           ..write('createdAt: $createdAt, ')
           ..write('syncState: $syncState, ')
@@ -509,6 +554,7 @@ class LocalPet extends DataClass implements Insertable<LocalPet> {
     birthDate,
     sex,
     photoUrl,
+    localPhotoPath,
     notificationsEnabled,
     createdAt,
     syncState,
@@ -526,6 +572,7 @@ class LocalPet extends DataClass implements Insertable<LocalPet> {
           other.birthDate == this.birthDate &&
           other.sex == this.sex &&
           other.photoUrl == this.photoUrl &&
+          other.localPhotoPath == this.localPhotoPath &&
           other.notificationsEnabled == this.notificationsEnabled &&
           other.createdAt == this.createdAt &&
           other.syncState == this.syncState &&
@@ -541,6 +588,7 @@ class LocalPetsCompanion extends UpdateCompanion<LocalPet> {
   final Value<DateTime?> birthDate;
   final Value<String?> sex;
   final Value<String?> photoUrl;
+  final Value<String?> localPhotoPath;
   final Value<bool> notificationsEnabled;
   final Value<DateTime> createdAt;
   final Value<String> syncState;
@@ -555,6 +603,7 @@ class LocalPetsCompanion extends UpdateCompanion<LocalPet> {
     this.birthDate = const Value.absent(),
     this.sex = const Value.absent(),
     this.photoUrl = const Value.absent(),
+    this.localPhotoPath = const Value.absent(),
     this.notificationsEnabled = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.syncState = const Value.absent(),
@@ -570,6 +619,7 @@ class LocalPetsCompanion extends UpdateCompanion<LocalPet> {
     this.birthDate = const Value.absent(),
     this.sex = const Value.absent(),
     this.photoUrl = const Value.absent(),
+    this.localPhotoPath = const Value.absent(),
     this.notificationsEnabled = const Value.absent(),
     required DateTime createdAt,
     this.syncState = const Value.absent(),
@@ -589,6 +639,7 @@ class LocalPetsCompanion extends UpdateCompanion<LocalPet> {
     Expression<DateTime>? birthDate,
     Expression<String>? sex,
     Expression<String>? photoUrl,
+    Expression<String>? localPhotoPath,
     Expression<bool>? notificationsEnabled,
     Expression<DateTime>? createdAt,
     Expression<String>? syncState,
@@ -604,6 +655,7 @@ class LocalPetsCompanion extends UpdateCompanion<LocalPet> {
       if (birthDate != null) 'birth_date': birthDate,
       if (sex != null) 'sex': sex,
       if (photoUrl != null) 'photo_url': photoUrl,
+      if (localPhotoPath != null) 'local_photo_path': localPhotoPath,
       if (notificationsEnabled != null)
         'notifications_enabled': notificationsEnabled,
       if (createdAt != null) 'created_at': createdAt,
@@ -622,6 +674,7 @@ class LocalPetsCompanion extends UpdateCompanion<LocalPet> {
     Value<DateTime?>? birthDate,
     Value<String?>? sex,
     Value<String?>? photoUrl,
+    Value<String?>? localPhotoPath,
     Value<bool>? notificationsEnabled,
     Value<DateTime>? createdAt,
     Value<String>? syncState,
@@ -637,6 +690,7 @@ class LocalPetsCompanion extends UpdateCompanion<LocalPet> {
       birthDate: birthDate ?? this.birthDate,
       sex: sex ?? this.sex,
       photoUrl: photoUrl ?? this.photoUrl,
+      localPhotoPath: localPhotoPath ?? this.localPhotoPath,
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       createdAt: createdAt ?? this.createdAt,
       syncState: syncState ?? this.syncState,
@@ -672,6 +726,9 @@ class LocalPetsCompanion extends UpdateCompanion<LocalPet> {
     if (photoUrl.present) {
       map['photo_url'] = Variable<String>(photoUrl.value);
     }
+    if (localPhotoPath.present) {
+      map['local_photo_path'] = Variable<String>(localPhotoPath.value);
+    }
     if (notificationsEnabled.present) {
       map['notifications_enabled'] = Variable<bool>(notificationsEnabled.value);
     }
@@ -701,6 +758,7 @@ class LocalPetsCompanion extends UpdateCompanion<LocalPet> {
           ..write('birthDate: $birthDate, ')
           ..write('sex: $sex, ')
           ..write('photoUrl: $photoUrl, ')
+          ..write('localPhotoPath: $localPhotoPath, ')
           ..write('notificationsEnabled: $notificationsEnabled, ')
           ..write('createdAt: $createdAt, ')
           ..write('syncState: $syncState, ')
@@ -4054,6 +4112,7 @@ typedef $$LocalPetsTableCreateCompanionBuilder =
       Value<DateTime?> birthDate,
       Value<String?> sex,
       Value<String?> photoUrl,
+      Value<String?> localPhotoPath,
       Value<bool> notificationsEnabled,
       required DateTime createdAt,
       Value<String> syncState,
@@ -4070,6 +4129,7 @@ typedef $$LocalPetsTableUpdateCompanionBuilder =
       Value<DateTime?> birthDate,
       Value<String?> sex,
       Value<String?> photoUrl,
+      Value<String?> localPhotoPath,
       Value<bool> notificationsEnabled,
       Value<DateTime> createdAt,
       Value<String> syncState,
@@ -4123,6 +4183,11 @@ class $$LocalPetsTableFilterComposer
 
   ColumnFilters<String> get photoUrl => $composableBuilder(
     column: $table.photoUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get localPhotoPath => $composableBuilder(
+    column: $table.localPhotoPath,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4196,6 +4261,11 @@ class $$LocalPetsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get localPhotoPath => $composableBuilder(
+    column: $table.localPhotoPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get notificationsEnabled => $composableBuilder(
     column: $table.notificationsEnabled,
     builder: (column) => ColumnOrderings(column),
@@ -4250,6 +4320,11 @@ class $$LocalPetsTableAnnotationComposer
   GeneratedColumn<String> get photoUrl =>
       $composableBuilder(column: $table.photoUrl, builder: (column) => column);
 
+  GeneratedColumn<String> get localPhotoPath => $composableBuilder(
+    column: $table.localPhotoPath,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get notificationsEnabled => $composableBuilder(
     column: $table.notificationsEnabled,
     builder: (column) => column,
@@ -4303,6 +4378,7 @@ class $$LocalPetsTableTableManager
                 Value<DateTime?> birthDate = const Value.absent(),
                 Value<String?> sex = const Value.absent(),
                 Value<String?> photoUrl = const Value.absent(),
+                Value<String?> localPhotoPath = const Value.absent(),
                 Value<bool> notificationsEnabled = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<String> syncState = const Value.absent(),
@@ -4317,6 +4393,7 @@ class $$LocalPetsTableTableManager
                 birthDate: birthDate,
                 sex: sex,
                 photoUrl: photoUrl,
+                localPhotoPath: localPhotoPath,
                 notificationsEnabled: notificationsEnabled,
                 createdAt: createdAt,
                 syncState: syncState,
@@ -4333,6 +4410,7 @@ class $$LocalPetsTableTableManager
                 Value<DateTime?> birthDate = const Value.absent(),
                 Value<String?> sex = const Value.absent(),
                 Value<String?> photoUrl = const Value.absent(),
+                Value<String?> localPhotoPath = const Value.absent(),
                 Value<bool> notificationsEnabled = const Value.absent(),
                 required DateTime createdAt,
                 Value<String> syncState = const Value.absent(),
@@ -4347,6 +4425,7 @@ class $$LocalPetsTableTableManager
                 birthDate: birthDate,
                 sex: sex,
                 photoUrl: photoUrl,
+                localPhotoPath: localPhotoPath,
                 notificationsEnabled: notificationsEnabled,
                 createdAt: createdAt,
                 syncState: syncState,

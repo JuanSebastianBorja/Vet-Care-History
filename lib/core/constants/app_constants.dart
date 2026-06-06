@@ -1,8 +1,9 @@
 class AppConstants {
-  // Crendenciales supabase
-  static const String supabaseUrl = 'https://lhhdccfgtwghacroayfn.supabase.co/';
+  // Credenciales Supabase — proyecto Vet Care 1 (kzrnuulihgmpayoiiyiu)
+  static const String supabaseUrl =
+      'https://kzrnuulihgmpayoiiyiu.supabase.co';
   static const String supabaseAnonKey =
-      'sb_publishable_IxMaVZn9dBEsYM0dU9GHow_ySX4gpgW';
+      'sb_publishable_0s7KypEkigClj1Gcr294jw_9SK1VYqQ';
 
   // OAuth de Google
   // El Web Client ID tambien se usa como serverClientId en Android para obtener idToken.
@@ -23,4 +24,15 @@ class AppConstants {
   // Configuraciones
   static const int minPasswordLength = 6;
   static const int maxPhotosPerConsultation = 5;
+
+  /// Tiempo máximo de espera para peticiones de autenticación (evita botón colgado).
+  static const Duration authRequestTimeout = Duration(seconds: 30);
+
+  /// Resumen seguro de la config Supabase para logs de depuración.
+  static String get supabaseConfigDebug {
+    final keyPreview = supabaseAnonKey.length > 12
+        ? '${supabaseAnonKey.substring(0, 12)}…'
+        : '(vacía)';
+    return 'URL=$supabaseUrl | Key=$keyPreview';
+  }
 }

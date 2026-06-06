@@ -11,7 +11,7 @@ class HistoryService {
   factory HistoryService() => _instance;
   HistoryService._internal();
 
-  final SupabaseClient _client = Supabase.instance.client;
+  SupabaseClient get _client => Supabase.instance.client;
 
   Future<List<ConsultationModel>> fetchConsultations(String petId) async {
     final data = await _client

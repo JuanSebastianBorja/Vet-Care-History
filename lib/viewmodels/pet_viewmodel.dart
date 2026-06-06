@@ -78,18 +78,7 @@ class PetViewModel extends ChangeNotifier {
     _error = null;
     notifyListeners();
     try {
-      PetModel petToSave = pet;
-      if (photo != null) {
-        final bytes = await photo.readAsBytes();
-        final mime = photo.mimeType ?? 'image/jpeg';
-        final url = await _repository.uploadPetPhoto(
-          'tmp_${DateTime.now().millisecondsSinceEpoch}',
-          bytes,
-          mime,
-        );
-        petToSave = pet.copyWith(photoUrl: url);
-      }
-      final saved = await _repository.addPet(petToSave);
+      final saved = await _repository.addPet(pet, photo: photo);
       _pets.add(saved);
       _applyFilters();
       _isLoading = false;
@@ -108,14 +97,7 @@ class PetViewModel extends ChangeNotifier {
     _error = null;
     notifyListeners();
     try {
-      PetModel petToSave = pet;
-      if (newPhoto != null) {
-        final bytes = await newPhoto.readAsBytes();
-        final mime = newPhoto.mimeType ?? 'image/jpeg';
-        final url = await _repository.uploadPetPhoto(pet.id, bytes, mime);
-        petToSave = pet.copyWith(photoUrl: url);
-      }
-      final updated = await _repository.updatePet(petToSave);
+      final updated = await _repository.updatePet(pet, newPhoto: newPhoto);
       final idx = _pets.indexWhere((p) => p.id == pet.id);
       if (idx != -1) _pets[idx] = updated;
       _applyFilters();

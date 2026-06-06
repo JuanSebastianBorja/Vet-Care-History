@@ -1,6 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:drift/drift.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../local/app_database.dart';
@@ -37,6 +41,12 @@ class PetRepository {
     try {
       final remotePets = await _remote.fetchPets(userId);
       for (final pet in remotePets) {
+        final existing = await _local.getPetById(pet.id);
+        if (existing != null &&
+            existing.syncState != 'synced' &&
+            existing.localPhotoPath != null) {
+          continue;
+        }
         await _local.upsertPet(
           _mapDomainToLocalCompanion(pet, syncState: 'synced'),
         );
@@ -48,53 +58,53 @@ class PetRepository {
     }
   }
 
-  Future<PetModel> addPet(PetModel pet) async {
+  Future<PetModel> addPet(PetModel pet, {XFile? photo}) async {
     final withId = pet.copyWith(id: pet.id.isEmpty ? _uuid.v4() : pet.id);
+    final petToSave = await _resolvePetPhoto(withId, photo);
 
-    await _local.upsertPet(
-      _mapDomainToLocalCompanion(withId, syncState: 'pending_upsert'),
-    );
-    await _local.enqueueSyncAction(
+    await _local.savePetPendingSync(
+      pet: _mapDomainToLocalCompanion(petToSave, syncState: 'pending_upsert'),
       entityType: 'pet',
-      entityId: withId.id,
+      entityId: petToSave.id,
       operation: 'upsert',
-      payloadJson: jsonEncode(_toSyncPayload(withId)),
+      payloadJson: jsonEncode(_toSyncPayload(petToSave)),
     );
 
     await syncPendingQueue();
-    final local = await _local.getPetById(withId.id);
-    return local != null ? _mapLocalToDomain(local) : withId;
+    final local = await _local.getPetById(petToSave.id);
+    return local != null ? _mapLocalToDomain(local) : petToSave;
   }
 
-  Future<PetModel> updatePet(PetModel pet) async {
-    await _local.upsertPet(
-      _mapDomainToLocalCompanion(pet, syncState: 'pending_upsert'),
-    );
-    await _local.enqueueSyncAction(
+  Future<PetModel> updatePet(PetModel pet, {XFile? newPhoto}) async {
+    final petToSave = await _resolvePetPhoto(pet, newPhoto);
+
+    await _local.savePetPendingSync(
+      pet: _mapDomainToLocalCompanion(petToSave, syncState: 'pending_upsert'),
       entityType: 'pet',
       entityId: pet.id,
       operation: 'upsert',
-      payloadJson: jsonEncode(_toSyncPayload(pet)),
+      payloadJson: jsonEncode(_toSyncPayload(petToSave)),
     );
 
-    await syncPendingQueue();
+    try {
+      await syncPendingQueue();
+    } catch (_) {
+      // La mascota ya quedo guardada localmente; el sync se reintentara luego.
+    }
+
     final local = await _local.getPetById(pet.id);
-    return local != null ? _mapLocalToDomain(local) : pet;
+    return local != null ? _mapLocalToDomain(local) : petToSave;
   }
 
   Future<void> deletePet(String petId) async {
-    await _local.markPetDeleted(petId);
-    await _local.enqueueSyncAction(
+    await _local.markPetPendingDelete(
+      petId: petId,
       entityType: 'pet',
       entityId: petId,
       operation: 'delete',
     );
 
     await syncPendingQueue();
-  }
-
-  Future<String> uploadPetPhoto(String key, Uint8List bytes, String mimeType) {
-    return _remote.uploadPetPhoto(key, bytes, mimeType);
   }
 
   Future<PetModel> toggleNotifications(String petId, bool enabled) async {
@@ -106,10 +116,8 @@ class PetRepository {
     final updated = _mapLocalToDomain(
       local,
     ).copyWith(notificationsEnabled: enabled);
-    await _local.upsertPet(
-      _mapDomainToLocalCompanion(updated, syncState: 'pending_upsert'),
-    );
-    await _local.enqueueSyncAction(
+    await _local.savePetPendingSync(
+      pet: _mapDomainToLocalCompanion(updated, syncState: 'pending_upsert'),
       entityType: 'pet',
       entityId: petId,
       operation: 'upsert',
@@ -131,6 +139,7 @@ class PetRepository {
       try {
         if (action.operation == 'delete') {
           await _remote.deletePet(action.entityId);
+          await _deleteLocalPetPhotoIfExists(action.entityId);
           await _local.hardDeletePet(action.entityId);
           await _local.removeSyncAction(action.id);
           continue;
@@ -142,7 +151,13 @@ class PetRepository {
         }
 
         final map = jsonDecode(action.payloadJson!) as Map<String, dynamic>;
-        final model = _fromSyncPayload(map);
+        var model = _fromSyncPayload(map);
+        final localRow = await _local.getPetById(model.id);
+
+        final uploadedUrl = await _tryUploadLocalPetPhoto(localRow);
+        if (uploadedUrl != null) {
+          model = model.copyWith(photoUrl: uploadedUrl, clearLocalPhotoPath: true);
+        }
 
         final existsRemotely = await _existsInRemote(model.userId, model.id);
         final synced = existsRemotely
@@ -150,12 +165,89 @@ class PetRepository {
             : await _remote.addPet(model);
 
         await _local.upsertPet(
-          _mapDomainToLocalCompanion(synced, syncState: 'synced'),
+          _mapDomainToLocalCompanion(
+            synced,
+            syncState: 'synced',
+            localPhotoPath: uploadedUrl != null
+                ? null
+                : localRow?.localPhotoPath,
+          ),
         );
         await _local.removeSyncAction(action.id);
       } catch (e) {
         await _local.markSyncAttemptFailed(action.id, e.toString());
       }
+    }
+  }
+
+  Future<PetModel> _resolvePetPhoto(PetModel pet, XFile? photo) async {
+    if (photo == null) return pet;
+
+    try {
+      final bytes = await photo.readAsBytes();
+      final mime = photo.mimeType ?? 'image/jpeg';
+      final url = await _remote.uploadPetPhoto(pet.id, bytes, mime);
+      await _deleteStoredLocalPhoto(pet.localPhotoPath);
+      return pet.copyWith(photoUrl: url, clearLocalPhotoPath: true);
+    } catch (_) {
+      final localPath = await _persistPetPhotoLocally(pet.id, photo);
+      await _deleteStoredLocalPhoto(pet.localPhotoPath);
+      return pet.copyWith(localPhotoPath: localPath);
+    }
+  }
+
+  Future<String> _persistPetPhotoLocally(String petId, XFile photo) async {
+    final dir = await getApplicationDocumentsDirectory();
+    final photosDir = Directory(p.join(dir.path, 'pending_pet_photos'));
+    if (!await photosDir.exists()) {
+      await photosDir.create(recursive: true);
+    }
+
+    final mime = photo.mimeType ?? 'image/jpeg';
+    final ext = mime.split('/').last;
+    final destPath = p.join(
+      photosDir.path,
+      '${petId}_${DateTime.now().millisecondsSinceEpoch}.$ext',
+    );
+
+    if (photo.path.isNotEmpty) {
+      await File(photo.path).copy(destPath);
+    } else {
+      await File(destPath).writeAsBytes(await photo.readAsBytes());
+    }
+
+    return destPath;
+  }
+
+  Future<String?> _tryUploadLocalPetPhoto(LocalPet? localRow) async {
+    final localPath = localRow?.localPhotoPath;
+    if (localPath == null || localPath.isEmpty) return null;
+
+    final file = File(localPath);
+    if (!await file.exists()) return null;
+
+    try {
+      final bytes = await file.readAsBytes();
+      final ext = p.extension(file.path).replaceFirst('.', '');
+      final mime = ext == 'png' ? 'image/png' : 'image/jpeg';
+      final url = await _remote.uploadPetPhoto(localRow!.id, bytes, mime);
+      await file.delete();
+      return url;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _deleteLocalPetPhotoIfExists(String petId) async {
+    final local = await _local.getPetById(petId);
+    await _deleteStoredLocalPhoto(local?.localPhotoPath);
+  }
+
+  Future<void> _deleteStoredLocalPhoto(String? localPath) async {
+    if (localPath == null || localPath.isEmpty) return;
+    final file = File(localPath);
+    if (await file.exists()) {
+      await file.delete();
     }
   }
 
@@ -176,6 +268,7 @@ class PetRepository {
   LocalPetsCompanion _mapDomainToLocalCompanion(
     PetModel pet, {
     required String syncState,
+    String? localPhotoPath,
   }) {
     return LocalPetsCompanion(
       id: Value(pet.id),
@@ -186,6 +279,7 @@ class PetRepository {
       birthDate: Value(pet.birthDate),
       sex: Value(pet.sex),
       photoUrl: Value(pet.photoUrl),
+      localPhotoPath: Value(localPhotoPath ?? pet.localPhotoPath),
       notificationsEnabled: Value(pet.notificationsEnabled),
       createdAt: Value(pet.createdAt),
       syncState: Value(syncState),
@@ -203,6 +297,7 @@ class PetRepository {
       birthDate: row.birthDate,
       sex: row.sex,
       photoUrl: row.photoUrl,
+      localPhotoPath: row.localPhotoPath,
       notificationsEnabled: row.notificationsEnabled,
       createdAt: row.createdAt,
     );

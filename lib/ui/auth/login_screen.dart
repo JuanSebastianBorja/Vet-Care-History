@@ -25,27 +25,67 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    print('🔐 [LoginScreen] Botón "Iniciar Sesión" presionado');
+    if (!_formKey.currentState!.validate()) {
+      print('🔐 [LoginScreen] Validación del formulario falló');
+      return;
+    }
+
     final vm = context.read<AuthViewModel>();
-    final ok = await vm.login(_emailCtrl.text.trim(), _passwordCtrl.text);
-    if (!mounted) return;
-    if (ok) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const PetListScreen()),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(vm.error ?? 'Error al iniciar sesión'),
-          backgroundColor: Colors.red.shade600,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+    try {
+      print('🔐 [LoginScreen] Llamando AuthViewModel.login...');
+      final ok = await vm.login(_emailCtrl.text.trim(), _passwordCtrl.text);
+      print('🔐 [LoginScreen] login retornó ok=$ok | error=${vm.error}');
+
+      if (!mounted) return;
+      if (ok) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const PetListScreen()),
+        );
+      } else {
+        _showLoginError(vm.error ?? 'Error al iniciar sesión');
+      }
+    } catch (e, st) {
+      print('🚨 ERROR CAPTURADO EN LOGIN: $e');
+      print('🚨 STACK TRACE LoginScreen._submit: $st');
+      if (!mounted) return;
+      _showLoginError(e.toString());
+    }
+  }
+
+  void _showLoginError(String message) {
+    final text = message.replaceAll('Exception: ', '');
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(text),
+        backgroundColor: Colors.red.shade600,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: Icon(Icons.error_outline, color: Colors.red.shade600, size: 36),
+        title: const Text('Error al iniciar sesión'),
+        content: SingleChildScrollView(
+          child: SelectableText(
+            text,
+            style: const TextStyle(fontSize: 14),
           ),
         ),
-      );
-    }
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Entendido'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _googleSignIn() async {

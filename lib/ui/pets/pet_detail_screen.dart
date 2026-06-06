@@ -15,6 +15,7 @@ import '../dewormings/deworming_form_screen.dart';
 import '../vaccines/vaccine_form_screen.dart';
 import '../appointments/appointment_form_screen.dart';
 import 'pet_form_screen.dart';
+import 'pet_photo_image.dart';
 
 class PetDetailScreen extends StatefulWidget {
   final PetModel initialPet;
@@ -244,11 +245,11 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
   }
 
   Widget _buildHeroPhoto() {
-    if (_pet.photoUrl != null) {
-      return Image.network(
-        _pet.photoUrl!,
+    if (_pet.displayPhotoSource != null) {
+      return PetPhotoImage(
+        pet: _pet,
         fit: BoxFit.cover,
-        errorBuilder: (ctx, err, stack) => _photoPlaceholder(),
+        placeholder: _photoPlaceholder,
       );
     }
     return _photoPlaceholder();
