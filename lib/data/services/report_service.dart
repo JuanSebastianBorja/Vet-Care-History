@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:io';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:intl/intl.dart';
@@ -197,6 +198,84 @@ class ReportService {
       ),
     );
 
+    // Inserción de fotos de exámenes clínicos
+    final List<pw.Widget> photoWidgets = [];
+    for (final c in filteredConsultations) {
+      for (final photo in c.photos) {
+        final bytes = await _fetchImageBytes(photo.photoUrl);
+        if (bytes != null) {
+          final img = pw.MemoryImage(bytes);
+          photoWidgets.add(
+            pw.Container(
+              margin: const pw.EdgeInsets.all(5),
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Container(
+                    width: 150,
+                    height: 150,
+                    child: pw.Image(img, fit: pw.BoxFit.cover),
+                  ),
+                  pw.SizedBox(height: 4),
+                  pw.Text(
+                    'Consulta: ${df.format(c.visitDate)}',
+                    style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700),
+                  ),
+                  pw.Text(
+                    c.motive.length > 25 ? '${c.motive.substring(0, 22)}...' : c.motive,
+                    style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+      }
+    }
+
+    if (photoWidgets.isNotEmpty) {
+      pdf.addPage(
+        pw.MultiPage(
+          pageFormat: PdfPageFormat.a4,
+          theme: pw.ThemeData.withFont(
+            base: pw.Font.helvetica(),
+            bold: pw.Font.helveticaBold(),
+          ),
+          build: (context) => [
+            pw.Header(
+              level: 1,
+              child: pw.Text(
+                'Anexo: Fotos de Exámenes Clínicos (${photoWidgets.length})',
+                style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColors.green900),
+              ),
+            ),
+            pw.SizedBox(height: 10),
+            pw.Wrap(
+              spacing: 15,
+              runSpacing: 15,
+              children: photoWidgets,
+            ),
+          ],
+        ),
+      );
+    }
+
     return pdf.save();
+  }
+
+  Future<Uint8List?> _fetchImageBytes(String url) async {
+    try {
+      final client = HttpClient();
+      final request = await client.getUrl(Uri.parse(url));
+      final response = await request.close();
+      if (response.statusCode == 200) {
+        final bytes = await response.fold<List<int>>([], (p, e) => p..addAll(e));
+        return Uint8List.fromList(bytes);
+      }
+    } catch (e) {
+      // ignore: avoid_print
+      print('Error fetching image for PDF: $e');
+    }
+    return null;
   }
 }

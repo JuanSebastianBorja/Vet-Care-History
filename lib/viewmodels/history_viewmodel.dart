@@ -156,7 +156,9 @@ class HistoryViewModel extends ChangeNotifier {
 
       // Programar notificación
       if (saved.nextDueDate != null) {
-        await _scheduleVaccineNotification(saved, petName);
+        if (await _areNotificationsEnabled(saved.petId)) {
+          await _scheduleVaccineNotification(saved, petName);
+        }
       }
 
       notifyListeners();
@@ -181,7 +183,9 @@ class HistoryViewModel extends ChangeNotifier {
         await _notifService.cancelNotification(
           NotificationService.generateNotificationId('vaccine', updated.id),
         );
-        await _scheduleVaccineNotification(updated, petName);
+        if (await _areNotificationsEnabled(updated.petId)) {
+          await _scheduleVaccineNotification(updated, petName);
+        }
       }
 
       notifyListeners();
@@ -221,7 +225,9 @@ class HistoryViewModel extends ChangeNotifier {
       _dewormings.insert(0, saved);
 
       if (saved.nextDueDate != null) {
-        await _scheduleDewormingNotification(saved, petName);
+        if (await _areNotificationsEnabled(saved.petId)) {
+          await _scheduleDewormingNotification(saved, petName);
+        }
       }
 
       notifyListeners();
@@ -244,7 +250,9 @@ class HistoryViewModel extends ChangeNotifier {
         await _notifService.cancelNotification(
           NotificationService.generateNotificationId('deworming', updated.id),
         );
-        await _scheduleDewormingNotification(updated, petName);
+        if (await _areNotificationsEnabled(updated.petId)) {
+          await _scheduleDewormingNotification(updated, petName);
+        }
       }
 
       notifyListeners();
@@ -344,7 +352,9 @@ class HistoryViewModel extends ChangeNotifier {
       _appointments.sort((x, y) => x.appointmentDatetime.compareTo(y.appointmentDatetime));
 
       // Programar recordatorio de cita (24h antes)
-      await _scheduleAppointmentNotification(saved, petName);
+      if (await _areNotificationsEnabled(saved.petId)) {
+        await _scheduleAppointmentNotification(saved, petName);
+      }
 
       notifyListeners();
       return true;
@@ -368,7 +378,9 @@ class HistoryViewModel extends ChangeNotifier {
       // Re-programar recordatorio (cancelar anterior y agendar nuevo)
       final notifId = NotificationService.generateNotificationId('appointment', updated.id);
       await _notifService.cancelNotification(notifId);
-      await _scheduleAppointmentNotification(updated, petName);
+      if (await _areNotificationsEnabled(updated.petId)) {
+        await _scheduleAppointmentNotification(updated, petName);
+      }
 
       notifyListeners();
       return true;
@@ -422,6 +434,47 @@ class HistoryViewModel extends ChangeNotifier {
       channelId: 'vetcare_vaccines', // Reutilizamos canal de vacunas/avisos
       payload: '{"type":"appointment","petId":"${a.petId}","recordId":"${a.id}"}',
     );
+  }
+
+  Future<bool> _areNotificationsEnabled(String petId) async {
+    final pet = await _localDb.getPetById(petId);
+    return pet?.notificationsEnabled ?? true;
+  }
+
+  Future<void> updateNotificationsState(bool enabled, String petName) async {
+    if (!enabled) {
+      // Cancelar todas las notificaciones
+      for (final v in _vaccines) {
+        await _notifService.cancelNotification(
+          NotificationService.generateNotificationId('vaccine', v.id),
+        );
+      }
+      for (final d in _dewormings) {
+        await _notifService.cancelNotification(
+          NotificationService.generateNotificationId('deworming', d.id),
+        );
+      }
+      for (final a in _appointments) {
+        await _notifService.cancelNotification(
+          NotificationService.generateNotificationId('appointment', a.id),
+        );
+      }
+    } else {
+      // Re-programar todas las notificaciones futuras
+      for (final v in _vaccines) {
+        if (v.nextDueDate != null) {
+          await _scheduleVaccineNotification(v, petName);
+        }
+      }
+      for (final d in _dewormings) {
+        if (d.nextDueDate != null) {
+          await _scheduleDewormingNotification(d, petName);
+        }
+      }
+      for (final a in _appointments) {
+        await _scheduleAppointmentNotification(a, petName);
+      }
+    }
   }
 
   void clear() {

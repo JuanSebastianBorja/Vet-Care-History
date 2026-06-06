@@ -128,7 +128,11 @@ class _PetListScreenState extends State<PetListScreen> {
               ),
             )
           else if (petVm.pets.isEmpty)
-            SliverFillRemaining(child: _EmptyState(onAdd: _openForm))
+            SliverFillRemaining(
+              child: petVm.hasPets
+                  ? const _NoSearchResultsState()
+                  : _EmptyState(onAdd: _openForm),
+            )
           else
             _PetGrid(
               pets: petVm.pets,
@@ -474,5 +478,35 @@ class _PetCard extends StatelessWidget {
       default:
         return const Color(0xFF37474F);
     }
+  }
+}
+
+class _NoSearchResultsState extends StatelessWidget {
+  const _NoSearchResultsState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.search_off_rounded, size: 60, color: Colors.grey.shade400),
+            const SizedBox(height: 16),
+            const Text(
+              'No se encontraron mascotas',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Intenta con otro nombre o filtro',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

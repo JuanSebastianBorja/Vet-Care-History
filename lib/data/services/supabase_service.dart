@@ -86,7 +86,7 @@ class SupabaseService {
         '🚨 ERROR CAPTURADO EN LOGIN (AuthException): ${e.message} | '
         'status=${e.statusCode}',
       );
-      throw Exception('Credenciales inválidas: ${e.message}');
+      throw Exception('Credenciales inválidas.');
     } on TimeoutException catch (e) {
       print('🚨 ERROR CAPTURADO EN LOGIN (Timeout): $e');
       throw Exception(e.message ?? e.toString());

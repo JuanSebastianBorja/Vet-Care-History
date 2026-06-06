@@ -31,8 +31,7 @@ class ConsultationRepository {
             .map((c) => _toLocalCompanion(c, syncState: 'synced'))
             .toList(),
       );
-      final merged = await _local.getConsultationsForPet(petId);
-      return merged.map(_fromLocal).toList();
+      return remoteData;
     } catch (_) {
       return localRows.map(_fromLocal).toList();
     }

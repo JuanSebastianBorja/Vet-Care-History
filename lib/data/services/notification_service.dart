@@ -5,6 +5,7 @@ import 'package:timezone/data/latest.dart' as tz;
 import 'package:workmanager/workmanager.dart';
 import 'dart:io' show Platform;
 import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -30,6 +31,15 @@ class NotificationService {
 
     // Inicializar timezones
     tz.initializeTimeZones();
+    try {
+      final timezoneInfo = await FlutterTimezone.getLocalTimezone();
+      tz.setLocalLocation(tz.getLocation(timezoneInfo.identifier));
+    } catch (_) {
+      // Fallback a America/Bogota o UTC si falla
+      try {
+        tz.setLocalLocation(tz.getLocation('America/Bogota'));
+      } catch (_) {}
+    }
 
     // Configuración para Android
     const androidSettings = AndroidInitializationSettings(

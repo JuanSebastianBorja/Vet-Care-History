@@ -17,6 +17,7 @@ class PetViewModel extends ChangeNotifier {
   int _pendingSyncCount = 0;
 
   List<PetModel> get pets => _filtered;
+  bool get hasPets => _pets.isNotEmpty;
   bool get isLoading => _isLoading;
   String? get error => _error;
   String get speciesFilter => _speciesFilter;

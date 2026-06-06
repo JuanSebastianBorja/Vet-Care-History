@@ -66,7 +66,7 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Eliminar mascota'),
         content: Text(
-          '¿Eliminar a ${_pet.name}? Se borrará todo su historial.',
+          '¿Eliminar a ${_pet.name}? Esta acción no se puede deshacer.',
         ),
         actions: [
           TextButton(
@@ -146,6 +146,8 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                     _buildVaccineSection(histVm),
                     const SizedBox(height: 12),
                     _buildDewormingSection(histVm),
+                    const SizedBox(height: 12),
+                    _buildPhotosSection(histVm),
                     const SizedBox(height: 12),
                     _buildAppointmentSection(histVm),
                   ],
@@ -522,21 +524,27 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                     scrollDirection: Axis.horizontal,
                     itemCount: c.photos.length,
                     separatorBuilder: (ctx, i) => const SizedBox(width: 6),
-                    itemBuilder: (ctx, i) => ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        c.photos[i].photoUrl,
-                        width: 60,
-                        height: 60,
-                        fit: BoxFit.cover,
-                        errorBuilder: (ctx, err, stack) => Container(
-                          width: 60,
-                          height: 60,
-                          color: Colors.grey.shade200,
-                          child: const Icon(Icons.broken_image, size: 20),
+                    itemBuilder: (ctx, i) {
+                      final p = c.photos[i];
+                      return GestureDetector(
+                        onTap: () => _openFullScreenPhoto(p.photoUrl),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            p.photoUrl,
+                            width: 60,
+                            height: 60,
+                            fit: BoxFit.cover,
+                            errorBuilder: (ctx, err, stack) => Container(
+                              width: 60,
+                              height: 60,
+                              color: Colors.grey.shade200,
+                              child: const Icon(Icons.broken_image, size: 20),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
+                      );
+                    },
                   ),
                 ),
               ],
@@ -944,7 +952,11 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
 
     final success = await vm.togglePetNotifications(_pet.id, newValue);
 
-    if (!success && mounted) {
+    if (success) {
+      if (mounted) {
+        await context.read<HistoryViewModel>().updateNotificationsState(newValue, _pet.name);
+      }
+    } else if (mounted) {
       // Revertir si falló
       setState(() {
         _pet = _pet.copyWith(notificationsEnabled: !newValue);
@@ -1164,5 +1176,107 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
         );
       }
     }
+  }
+
+  void _openFullScreenPhoto(String url) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.black,
+            iconTheme: const IconThemeData(color: Colors.white),
+          ),
+          body: Center(
+            child: InteractiveViewer(
+              clipBehavior: Clip.none,
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: Image.network(
+                url,
+                fit: BoxFit.contain,
+                loadingBuilder: (_, child, progress) => progress == null
+                    ? child
+                    : const CircularProgressIndicator(color: Colors.white),
+                errorBuilder: (_, __, ___) => const Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.broken_image, color: Colors.white54, size: 48),
+                    SizedBox(height: 8),
+                    Text('No se pudo cargar la imagen', style: TextStyle(color: Colors.white54)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPhotosSection(HistoryViewModel vm) {
+    final allPhotos = vm.consultations.expand((c) => c.photos).toList();
+
+    return Card(
+      child: ExpansionTile(
+        leading: Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: const Color(0xFFAD1457).withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(
+            Icons.photo_library_outlined,
+            color: Color(0xFFAD1457),
+            size: 20,
+          ),
+        ),
+        title: Text(
+          'Fotos de Exámenes (${allPhotos.length})',
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+        ),
+        children: [
+          if (allPhotos.isEmpty)
+            _emptyState(Icons.photo_library_outlined)
+          else
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                ),
+                itemCount: allPhotos.length,
+                itemBuilder: (context, index) {
+                  final photo = allPhotos[index];
+                  return GestureDetector(
+                    onTap: () => _openFullScreenPhoto(photo.photoUrl),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        photo.photoUrl,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (_, child, progress) => progress == null
+                            ? child
+                            : const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                        errorBuilder: (_, __, ___) => Container(
+                          color: Colors.grey.shade100,
+                          child: const Icon(Icons.broken_image, color: Colors.grey),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
   }
 }
