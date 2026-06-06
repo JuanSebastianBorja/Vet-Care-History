@@ -6,6 +6,10 @@ import '../local/app_database.dart';
 import '../models/appointment_model.dart';
 import '../services/history_service.dart';
 
+/// Repositorio de Citas Veterinarias que implementa la estrategia offline-first.
+///
+/// Gestiona citas de manera local y encola las acciones pendientes en la
+/// cola de sincronización ([SyncQueue]) para enviarlas a Supabase.
 class AppointmentRepository {
   static final AppointmentRepository _instance = AppointmentRepository._internal();
   factory AppointmentRepository() => _instance;
@@ -16,6 +20,11 @@ class AppointmentRepository {
   final AppDatabase _local = AppDatabase();
   final Uuid _uuid = const Uuid();
 
+  /// Trae la lista de citas para una mascota.
+  ///
+  /// Primero intenta consultar remotamente a Supabase. Si tiene éxito, reemplaza las citas
+  /// locales por la información fresca obtenida del servidor.
+  /// Si ocurre un fallo de red, retorna los registros locales almacenados.
   Future<List<AppointmentModel>> fetchAppointments(String petId) async {
     final localRows = await _local.getAppointmentsForPet(petId);
 
@@ -34,6 +43,10 @@ class AppointmentRepository {
     }
   }
 
+  /// Agrega una nueva cita localmente y encola su sincronización remota.
+  ///
+  /// Asigna un ID único tipo UUID si no lo tiene, inserta en SQLite en estado `pending_upsert`
+  /// e inserta la acción en la cola de sincronización local.
   Future<AppointmentModel> addAppointment(AppointmentModel appointment) async {
     final withId = appointment.id.isEmpty ? _copyWithGeneratedId(appointment) : appointment;
 

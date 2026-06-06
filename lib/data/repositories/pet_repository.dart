@@ -11,6 +11,11 @@ import '../local/app_database.dart';
 import '../models/pet_model.dart';
 import '../services/pet_service.dart';
 
+/// Repositorio de Mascotas que implementa la estrategia offline-first.
+///
+/// Gestiona la lectura y escritura prioritaria en la base de datos local SQLite y
+/// encola las operaciones pendientes en [SyncQueue] para su posterior envío
+/// y sincronización con el servidor remoto (Supabase).
 class PetRepository {
   static final PetRepository _instance = PetRepository._internal();
   factory PetRepository() => _instance;
@@ -21,20 +26,28 @@ class PetRepository {
   final AppDatabase _local = AppDatabase();
   final Uuid _uuid = const Uuid();
 
+  /// Escucha reactivamente los cambios en las mascotas locales asociadas a un [userId].
   Stream<List<PetModel>> watchPets(String userId) {
     return _local
         .watchPetsForUser(userId)
         .map((rows) => rows.map(_mapLocalToDomain).toList());
   }
 
+  /// Escucha en tiempo real la cantidad de acciones de sincronización pendientes en la cola local.
   Stream<int> watchPendingSyncCount() {
     return _local.watchPendingSyncCount();
   }
 
+  /// Obtiene la cantidad actual de acciones pendientes por sincronizar en local.
   Future<int> getPendingSyncCount() {
     return _local.getPendingSyncCount();
   }
 
+  /// Trae la lista de mascotas para el usuario.
+  ///
+  /// Primero intenta consultar remotamente a Supabase. Si tiene éxito, actualiza y guarda las mascotas
+  /// en la base de datos local (evitando sobrescribir mascotas locales con fotos pendientes de subir).
+  /// Si ocurre un fallo de red o servidor, retorna la lista guardada en la base de datos local.
   Future<List<PetModel>> fetchPets(String userId) async {
     final localRows = await _local.getPetsForUser(userId);
 
@@ -58,6 +71,11 @@ class PetRepository {
     }
   }
 
+  /// Agrega una nueva mascota localmente y encola su sincronización.
+  ///
+  /// Asigna un ID único tipo UUID, resuelve el guardado local o remoto de su foto,
+  /// inserta el registro en SQLite con estado `pending_upsert` e inserta la operación en la cola de sincronización.
+  /// Por último, intenta disparar un ciclo inmediato de sincronización.
   Future<PetModel> addPet(PetModel pet, {XFile? photo}) async {
     final withId = pet.copyWith(id: pet.id.isEmpty ? _uuid.v4() : pet.id);
     final petToSave = await _resolvePetPhoto(withId, photo);
@@ -129,6 +147,15 @@ class PetRepository {
     return result != null ? _mapLocalToDomain(result) : updated;
   }
 
+  /// Sincroniza la cola local de pendientes de tipo 'pet' hacia el servidor remoto.
+  ///
+  /// Recorre los elementos de la cola local [SyncQueue]. Para cada uno:
+  /// 1. Verifica si corresponde al tipo de entidad y si cumple con las condiciones de reintento (backoff exponencial).
+  /// 2. Si la operación es `delete`, realiza la eliminación remota y local.
+  /// 3. Si la mascota tiene una foto guardada temporalmente en local (offline), intenta subirla primero a Supabase Storage.
+  /// 4. Determina si la mascota existe remotamente para realizar un INSERT (add) o UPDATE (update).
+  /// 5. Marca el registro local como `synced` y elimina la acción de la cola.
+  /// 6. En caso de error, incrementa el contador de intentos y registra el último error en la base de datos.
   Future<void> syncPendingQueue() async {
     final pending = await _local.getPendingSyncActions();
 

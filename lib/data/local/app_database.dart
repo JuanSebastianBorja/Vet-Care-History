@@ -5,6 +5,7 @@ import 'db_connection.dart';
 
 part 'app_database.g.dart';
 
+/// Tabla Drift para almacenar de manera local la información de las mascotas.
 class LocalPets extends Table {
   TextColumn get id => text()();
 
@@ -43,6 +44,10 @@ class LocalPets extends Table {
   Set<Column<Object>> get primaryKey => {id};
 }
 
+/// Tabla Drift que actúa como cola de sincronización de operaciones pendientes (offline queue).
+///
+/// Guarda los registros de cambios realizados mientras la aplicación no tiene conexión a internet
+/// (o cuando falla la subida inicial), permitiendo su sincronización diferida hacia Supabase.
 class SyncQueue extends Table {
   IntColumn get id => integer().autoIncrement()();
 
@@ -62,6 +67,7 @@ class SyncQueue extends Table {
   TextColumn get lastError => text().named('last_error').nullable()();
 }
 
+/// Tabla Drift para almacenar de manera local las consultas clínicas asociadas a una mascota.
 class LocalConsultations extends Table {
   TextColumn get id => text()();
 
@@ -89,6 +95,7 @@ class LocalConsultations extends Table {
   Set<Column<Object>> get primaryKey => {id};
 }
 
+/// Tabla Drift para almacenar de manera local el registro de vacunas aplicadas a las mascotas.
 class LocalVaccines extends Table {
   TextColumn get id => text()();
 
@@ -113,6 +120,7 @@ class LocalVaccines extends Table {
   Set<Column<Object>> get primaryKey => {id};
 }
 
+/// Tabla Drift para almacenar de manera local el registro de desparasitaciones de las mascotas.
 class LocalDewormings extends Table {
   TextColumn get id => text()();
 
@@ -141,6 +149,7 @@ class LocalDewormings extends Table {
   Set<Column<Object>> get primaryKey => {id};
 }
 
+/// Tabla Drift para rastrear de manera local las fotos de consultas pendientes por subir.
 class PendingConsultationPhotos extends Table {
   IntColumn get id => integer().autoIncrement()();
 
@@ -156,6 +165,7 @@ class PendingConsultationPhotos extends Table {
       dateTime().named('created_at').withDefault(currentDateAndTime)();
 }
 
+/// Tabla Drift para almacenar citas veterinarias de manera local.
 class LocalAppointments extends Table {
   TextColumn get id => text()();
 
@@ -183,6 +193,10 @@ class LocalAppointments extends Table {
   Set<Column<Object>> get primaryKey => {id};
 }
 
+/// Servicio de base de datos local SQLite administrado con Drift.
+///
+/// Implementa patrón Singleton para garantizar una única conexión abierta a la base de datos local,
+/// y expone métodos de consulta y transacciones seguras bajo una cola de escritura serializada.
 @DriftDatabase(
   tables: [
     LocalPets,
@@ -195,14 +209,20 @@ class LocalAppointments extends Table {
   ],
 )
 class AppDatabase extends _$AppDatabase {
+  // Inicialización privada del Singleton.
   AppDatabase._() : super(openConnection());
 
+  /// Instancia compartida única para toda la aplicación.
   static final AppDatabase instance = AppDatabase._();
 
+  /// Constructor factory que retorna la instancia única de [AppDatabase].
   factory AppDatabase() => instance;
 
   bool _inWrite = false;
 
+  /// Ejecuta una acción de escritura serializada a través de la cola global de reintentos.
+  ///
+  /// Evita colisiones de bloqueos de archivo SQLite en escenarios de alta concurrencia.
   Future<T> runWrite<T>(Future<T> Function() action) {
     return DatabaseWriteQueue.instance.enqueue(() async {
       return DatabaseWriteQueue.runWithRetry(() async {
@@ -216,6 +236,7 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
+  // Ejecuta directamente si ya estamos en un contexto de escritura, de lo contrario encola.
   Future<T> _write<T>(Future<T> Function() action) {
     if (_inWrite) return action();
     return runWrite(action);
@@ -224,6 +245,7 @@ class AppDatabase extends _$AppDatabase {
   @override
   int get schemaVersion => 6;
 
+  /// Lógica de actualización e inicialización del esquema de base de datos (SQLite Schema Migrations).
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) async {
