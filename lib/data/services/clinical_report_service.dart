@@ -66,7 +66,7 @@ class ClinicalReportService {
                       style: pw.TextStyle(
                         fontSize: 24,
                         fontWeight: pw.FontWeight.bold,
-                        color: PdfColor.fromHex('#2E7D32'),
+                        color: PdfColor.fromHex('#1B4D3E'),
                       ),
                     ),
                     pw.Text(
@@ -85,7 +85,7 @@ class ClinicalReportService {
               ],
             ),
             pw.SizedBox(height: 16),
-            pw.Divider(color: PdfColor.fromHex('#2E7D32'), thickness: 2),
+            pw.Divider(color: PdfColor.fromHex('#1B4D3E'), thickness: 2),
             pw.SizedBox(height: 16),
             pw.Text(
               'Datos de la Mascota',
@@ -188,7 +188,7 @@ class ClinicalReportService {
                   style: pw.TextStyle(
                     fontSize: 15,
                     fontWeight: pw.FontWeight.bold,
-                    color: PdfColor.fromHex('#2E7D32'),
+                    color: PdfColor.fromHex('#1B4D3E'),
                   ),
                 ),
                 pw.SizedBox(height: 8),
@@ -240,7 +240,7 @@ class ClinicalReportService {
                   style: pw.TextStyle(
                     fontSize: 15,
                     fontWeight: pw.FontWeight.bold,
-                    color: PdfColor.fromHex('#2E7D32'),
+                    color: PdfColor.fromHex('#1B4D3E'),
                   ),
                 ),
                 pw.SizedBox(height: 8),
@@ -292,7 +292,7 @@ class ClinicalReportService {
                   style: pw.TextStyle(
                     fontSize: 15,
                     fontWeight: pw.FontWeight.bold,
-                    color: PdfColor.fromHex('#2E7D32'),
+                    color: PdfColor.fromHex('#1B4D3E'),
                   ),
                 ),
                 pw.SizedBox(height: 8),

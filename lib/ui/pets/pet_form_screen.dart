@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../data/models/pet_model.dart';
 import '../../viewmodels/pet_viewmodel.dart';
 
@@ -76,7 +77,7 @@ class _PetFormScreenState extends State<PetFormScreen> {
       lastDate: DateTime.now(),
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
-          colorScheme: const ColorScheme.light(primary: Color(0xFF2E7D32)),
+          colorScheme: const ColorScheme.light(primary: Color(0xFF1B4D3E)),
         ),
         child: child!,
       ),
@@ -223,14 +224,22 @@ class _PetFormScreenState extends State<PetFormScreen> {
       child: GestureDetector(
         onTap: _pickPhoto,
         child: Stack(
+          alignment: Alignment.center,
           children: [
             Container(
-              width: 120,
-              height: 120,
+              width: 130,
+              height: 130,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFFE8F5E9),
-                border: Border.all(color: const Color(0xFF2E7D32), width: 2),
+                color: const Color(0xFFEEF3F0),
+                border: Border.all(color: const Color(0xFF1B4D3E), width: 3),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF1B4D3E).withValues(alpha: 0.1),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
                 image: image,
               ),
               child: image == null
@@ -238,27 +247,36 @@ class _PetFormScreenState extends State<PetFormScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(Icons.add_a_photo_outlined,
-                            size: 32, color: Color(0xFF2E7D32)),
-                        SizedBox(height: 4),
-                        Text('Foto',
+                            size: 34, color: Color(0xFF1B4D3E)),
+                        SizedBox(height: 6),
+                        Text('Agregar Foto',
                             style: TextStyle(
-                                color: Color(0xFF2E7D32), fontSize: 12)),
+                                color: Color(0xFF1B4D3E), fontSize: 11, fontWeight: FontWeight.bold)),
                       ],
                     )
                   : null,
-            ),
+            )
+            .animate(onPlay: (c) => c.repeat(reverse: true))
+            .shimmer(delay: 3000.ms, duration: 1800.ms, color: Colors.white24),
             Positioned(
-              bottom: 0,
-              right: 0,
+              bottom: 4,
+              right: 4,
               child: Container(
-                width: 34,
-                height: 34,
+                width: 36,
+                height: 36,
                 decoration: const BoxDecoration(
-                  color: Color(0xFF2E7D32),
+                  color: Color(0xFFE27B58),
                   shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 4,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child:
-                    const Icon(Icons.edit, size: 18, color: Colors.white),
+                    const Icon(Icons.edit_rounded, size: 18, color: Colors.white),
               ),
             ),
           ],
@@ -273,9 +291,9 @@ class _PetFormScreenState extends State<PetFormScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
-          color: const Color(0xFFF8F8F8),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE0E6E2)),
         ),
         child: Row(
           children: [
@@ -309,23 +327,49 @@ class _PetFormScreenState extends State<PetFormScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Sexo (opcional)',
-            style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+        Padding(
+          padding: const EdgeInsets.only(left: 4),
+          child: Text('Sexo (opcional)',
+              style: TextStyle(fontSize: 13, color: Colors.grey.shade700, fontWeight: FontWeight.bold)),
+        ),
         const SizedBox(height: 10),
-        Wrap(
-          spacing: 8,
+        Row(
           children: List.generate(_sexValues.length, (i) {
             final active = _sex == _sexValues[i];
-            return ChoiceChip(
-              label: Text(_sexLabels[i]),
-              selected: active,
-              onSelected: (v) =>
-                  setState(() => _sex = active ? null : _sexValues[i]),
-              selectedColor: const Color(0xFF2E7D32),
-              labelStyle: TextStyle(
-                color: active ? Colors.white : Colors.grey.shade700,
-                fontWeight:
-                    active ? FontWeight.w600 : FontWeight.normal,
+            final color = _sexValues[i] == 'male' 
+                ? const Color(0xFF1565C0) 
+                : (_sexValues[i] == 'female' ? const Color(0xFFC2185B) : const Color(0xFF455A64));
+            
+            return Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: i == 0 ? 0 : 4,
+                  right: i == _sexValues.length - 1 ? 0 : 4,
+                ),
+                child: GestureDetector(
+                  onTap: () => setState(() => _sex = active ? null : _sexValues[i]),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color: active ? color.withValues(alpha: 0.1) : Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: active ? color : const Color(0xFFE0E6E2),
+                        width: active ? 2 : 1,
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        _sexLabels[i],
+                        style: TextStyle(
+                          color: active ? color : const Color(0xFF333D38),
+                          fontWeight: active ? FontWeight.bold : FontWeight.w500,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ),
             );
           }),
@@ -335,15 +379,22 @@ class _PetFormScreenState extends State<PetFormScreen> {
   }
 
   Widget _buildNotificationsToggle() {
-    return Card(
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE0E6E2)),
+      ),
       child: SwitchListTile(
         title: const Text('Notificaciones',
-            style: TextStyle(fontWeight: FontWeight.w600)),
+            style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B4D3E))),
         subtitle: const Text('Recordatorios de citas y vacunas'),
         value: _notifications,
         onChanged: (v) => setState(() => _notifications = v),
-        activeThumbColor: const Color(0xFF2E7D32),
-        secondary: const Icon(Icons.notifications_outlined),
+        activeThumbColor: Colors.white,
+        activeTrackColor: const Color(0xFFE27B58),
+        inactiveTrackColor: Colors.grey.shade200,
+        secondary: const Icon(Icons.notifications_outlined, color: Color(0xFF1B4D3E)),
       ),
     );
   }

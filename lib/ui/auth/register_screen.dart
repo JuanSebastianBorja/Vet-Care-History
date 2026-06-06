@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../pets/pet_list_screen.dart';
 import 'login_screen.dart';
@@ -66,40 +67,74 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF0B5945), Color(0xFF10B981)],
-          ),
-        ),
-        child: Column(
-          children: [
-            _buildHeader(),
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFF6FAF8),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(36)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 15,
-                      offset: Offset(0, -5),
-                    ),
-                  ],
-                ),
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(28, 36, 28, 28),
-                  child: _buildForm(),
-                ),
+      body: Stack(
+        children: [
+          // Background Gradient
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF1B4D3E), Color(0xFF3F826D)],
               ),
             ),
-          ],
-        ),
+          ),
+          // Decorative circles
+          Positioned(
+            top: -40,
+            right: -40,
+            child: Container(
+              width: 180,
+              height: 180,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.05),
+              ),
+            )
+            .animate(onPlay: (c) => c.repeat(reverse: true))
+            .scaleXY(begin: 0.9, end: 1.1, duration: 3200.ms, curve: Curves.easeInOut),
+          ),
+          Positioned(
+            top: 200,
+            left: -60,
+            child: Container(
+              width: 140,
+              height: 140,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.03),
+              ),
+            )
+            .animate(onPlay: (c) => c.repeat(reverse: true))
+            .scaleXY(begin: 0.8, end: 1.2, duration: 3800.ms, curve: Curves.easeInOut),
+          ),
+          Column(
+            children: [
+              _buildHeader(),
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF7FAF8),
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(36)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 15,
+                        offset: Offset(0, -5),
+                      ),
+                    ],
+                  ),
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(28, 36, 28, 28),
+                    child: _buildForm(),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -108,7 +143,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return SafeArea(
       bottom: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 28, 28),
+        padding: const EdgeInsets.fromLTRB(16, 16, 28, 24),
         child: Row(
           children: [
             IconButton(
@@ -117,24 +152,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   color: Colors.white),
             ),
             const SizedBox(width: 8),
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Crear cuenta',
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    letterSpacing: 0.5,
+            Expanded(
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Crear cuenta',
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 0.5,
+                    ),
                   ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'Registra tu expediente clínico',
-                  style: TextStyle(fontSize: 13, color: Colors.white70, fontWeight: FontWeight.w500),
-                ),
-              ],
+                  SizedBox(height: 2),
+                  Text(
+                    'Registra tu expediente clínico',
+                    style: TextStyle(fontSize: 13, color: Colors.white70, fontWeight: FontWeight.w500),
+                  ),
+                ],
+              )
+              .animate()
+              .fadeIn(duration: 500.ms)
+              .slideX(begin: 0.1, end: 0),
             ),
           ],
         ),
@@ -158,7 +198,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               validator: (v) =>
                   (v == null || v.trim().isEmpty) ? 'Ingresa tu nombre' : null,
-            ),
+            ).animate().fadeIn(delay: 50.ms).slideY(begin: 0.1, end: 0),
             const SizedBox(height: 16),
             TextFormField(
               controller: _emailCtrl,
@@ -172,7 +212,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 if (!v.contains('@')) return 'Email inválido';
                 return null;
               },
-            ),
+            ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1, end: 0),
             const SizedBox(height: 16),
             TextFormField(
               controller: _passwordCtrl,
@@ -194,7 +234,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 if (v.length < 6) return 'Mínimo 6 caracteres';
                 return null;
               },
-            ),
+            ).animate().fadeIn(delay: 150.ms).slideY(begin: 0.1, end: 0),
             const SizedBox(height: 16),
             TextFormField(
               controller: _confirmCtrl,
@@ -217,7 +257,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 if (v != _passwordCtrl.text) return 'Las contraseñas no coinciden';
                 return null;
               },
-            ),
+            ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, end: 0),
             const SizedBox(height: 32),
             SizedBox(
               height: 52,
@@ -234,7 +274,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       )
                     : const Text('Crear Cuenta'),
               ),
-            ),
+            ).animate().fadeIn(delay: 250.ms).slideY(begin: 0.1, end: 0),
             const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -255,12 +295,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     'Inicia sesión',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF2E7D32),
+                      color: Color(0xFF1B4D3E),
                     ),
                   ),
                 ),
               ],
-            ),
+            ).animate().fadeIn(delay: 300.ms),
           ],
         ),
       ),

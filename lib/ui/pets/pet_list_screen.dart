@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../data/models/pet_model.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/pet_viewmodel.dart';
@@ -124,7 +125,7 @@ class _PetListScreenState extends State<PetListScreen> {
           if (petVm.isLoading)
             const SliverFillRemaining(
               child: Center(
-                child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
+                child: CircularProgressIndicator(color: Color(0xFF1B4D3E)),
               ),
             )
           else if (petVm.pets.isEmpty)
@@ -179,12 +180,23 @@ class _AppBarSliver extends StatelessWidget {
     return SliverAppBar(
       floating: true,
       snap: true,
+      backgroundColor: const Color(0xFF1B4D3E),
+      elevation: 4,
+      shadowColor: const Color(0xFF1B4D3E).withValues(alpha: 0.15),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
+      ),
+      centerTitle: false,
       title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('VetCare'),
+          const Text(
+            'VetCare',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+          ),
           Text(
-            'Hola, $name',
-            style: const TextStyle(fontSize: 12, color: Colors.white70),
+            'Hola, $name 👋',
+            style: const TextStyle(fontSize: 13, color: Colors.white70, fontWeight: FontWeight.w500),
           ),
         ],
       ),
@@ -198,13 +210,19 @@ class _AppBarSliver extends StatelessWidget {
           },
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: UserAvatarImage(
-              key: ValueKey('${avatarUrl}_${authVm.avatarVersion}'),
-              avatarUrl: avatarUrl,
-              radius: 16,
-              backgroundColor: Colors.white24,
-              iconColor: Colors.white,
-              iconSize: 18,
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white38, width: 2),
+              ),
+              child: UserAvatarImage(
+                key: ValueKey('${avatarUrl}_${authVm.avatarVersion}'),
+                avatarUrl: avatarUrl,
+                radius: 16,
+                backgroundColor: Colors.white24,
+                iconColor: Colors.white,
+                iconSize: 18,
+              ),
             ),
           ),
         ),
@@ -213,6 +231,7 @@ class _AppBarSliver extends StatelessWidget {
           tooltip: 'Cerrar sesión',
           onPressed: onLogout,
         ),
+        const SizedBox(width: 8),
       ],
     );
   }
@@ -259,29 +278,54 @@ class _SpeciesFilter extends StatelessWidget {
     required this.onSelect,
   });
 
+  String _emojiForSpecies(String s) {
+    switch (s.toLowerCase()) {
+      case 'todos':
+        return '🔍 Todos';
+      case 'perro':
+        return '🐶 Perros';
+      case 'gato':
+        return '🐱 Gatos';
+      case 'ave':
+        return '🦜 Aves';
+      case 'conejo':
+        return '🐰 Conejos';
+      case 'reptil':
+        return '🦎 Reptiles';
+      default:
+        return '🧩 Otros';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 52,
+      height: 58,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         itemCount: species.length,
         separatorBuilder: (ctx, i) => const SizedBox(width: 8),
         itemBuilder: (_, i) {
           final s = species[i];
           final active = selected == s;
           return FilterChip(
-            label: Text(s),
+            label: Text(_emojiForSpecies(s)),
             selected: active,
             onSelected: (_) => onSelect(s),
-            selectedColor: const Color(0xFF2E7D32),
+            selectedColor: const Color(0xFF1B4D3E),
             checkmarkColor: Colors.white,
-            labelStyle: TextStyle(
-              color: active ? Colors.white : Colors.grey.shade700,
-              fontWeight: active ? FontWeight.w600 : FontWeight.normal,
+            backgroundColor: Colors.white,
+            side: BorderSide(
+              color: active ? Colors.transparent : const Color(0xFFE0E6E2),
+              width: 1,
             ),
-          );
+            labelStyle: TextStyle(
+              color: active ? Colors.white : const Color(0xFF333D38),
+              fontWeight: active ? FontWeight.bold : FontWeight.w500,
+              fontSize: 13,
+            ),
+          ).animate(target: active ? 1 : 0).scaleXY(end: 1.08, duration: 150.ms);
         },
       ),
     );
@@ -302,31 +346,45 @@ class _EmptyState extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 120,
-              height: 120,
+              width: 130,
+              height: 130,
               decoration: BoxDecoration(
-                color: const Color(0xFFE8F5E9),
-                borderRadius: BorderRadius.circular(60),
+                color: const Color(0xFFEEF3F0),
+                borderRadius: BorderRadius.circular(65),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF1B4D3E).withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              child: const Icon(Icons.pets, size: 60, color: Color(0xFF2E7D32)),
-            ),
-            const SizedBox(height: 24),
+              child: const Center(
+                child: Icon(Icons.pets, size: 64, color: Color(0xFF1B4D3E)),
+              ),
+            )
+            .animate(onPlay: (c) => c.repeat(reverse: true))
+            .scaleXY(begin: 0.92, end: 1.08, duration: 1200.ms, curve: Curves.easeInOut)
+            .rotate(begin: -0.05, end: 0.05, duration: 1200.ms, curve: Curves.easeInOut),
+            const SizedBox(height: 28),
             const Text(
-              'Sin mascotas registradas',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              '¡Sin mascotas aún!',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1B4D3E)),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Text(
-              'Registra a tu primera mascota\npara llevar su historial clínico',
+              'Registra a tu primera mascota para\ncomenzar a llevar su historial clínico.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 14, height: 1.4),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 36),
             ElevatedButton.icon(
               onPressed: onAdd,
               icon: const Icon(Icons.add_rounded),
               label: const Text('Agregar mascota'),
-            ),
+            )
+            .animate(onPlay: (c) => c.repeat(reverse: true))
+            .shimmer(delay: 2000.ms, duration: 1500.ms, color: Colors.white24),
           ],
         ),
       ),
@@ -343,17 +401,20 @@ class _PetGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SliverPadding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
       sliver: SliverGrid(
         delegate: SliverChildBuilderDelegate(
-          (_, i) => _PetCard(pet: pets[i], onTap: () => onTap(pets[i])),
+          (_, i) => _PetCard(pet: pets[i], onTap: () => onTap(pets[i]))
+              .animate(delay: (i * 80).ms)
+              .fadeIn(duration: 400.ms, curve: Curves.easeOut)
+              .slideY(begin: 0.1, end: 0, curve: Curves.easeOutQuad),
           childCount: pets.length,
         ),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 0.82,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+          childAspectRatio: 0.78,
         ),
       ),
     );
@@ -374,6 +435,12 @@ class _PetCard extends StatelessWidget {
       onTap: onTap,
       child: Card(
         clipBehavior: Clip.antiAlias,
+        elevation: 3,
+        shadowColor: color.withValues(alpha: 0.08),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(22),
+          side: BorderSide(color: color.withValues(alpha: 0.12), width: 1),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -387,65 +454,140 @@ class _PetCard extends StatelessWidget {
 
   Widget _buildPhoto(Color color) {
     if (pet.displayPhotoSource != null) {
-      return PetPhotoImage(
-        pet: pet,
-        fit: BoxFit.cover,
-        placeholder: () => _placeholder(color),
-        loadingBuilder: (_, child, progress) => progress == null
-            ? child
-            : Center(
-                child: CircularProgressIndicator(color: color, strokeWidth: 2),
-              ),
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          PetPhotoImage(
+            pet: pet,
+            fit: BoxFit.cover,
+            placeholder: () => _placeholder(color),
+            loadingBuilder: (_, child, progress) => progress == null
+                ? child
+                : Center(
+                    child: CircularProgressIndicator(color: color, strokeWidth: 2),
+                  ),
+          ),
+          Positioned(
+            top: 8,
+            right: 8,
+            child: _buildGenderBadge(pet.sex),
+          ),
+        ],
       );
     }
-    return _placeholder(color);
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        _placeholder(color),
+        Positioned(
+          top: 8,
+          right: 8,
+          child: _buildGenderBadge(pet.sex),
+        ),
+      ],
+    );
   }
 
   Widget _placeholder(Color color) {
     return Container(
-      color: color.withValues(alpha: 0.1),
+      color: color.withValues(alpha: 0.08),
       child: Center(
-        child: Icon(_speciesIcon(pet.species), size: 52, color: color),
+        child: Icon(_speciesIcon(pet.species), size: 48, color: color),
       ),
+    );
+  }
+
+  Widget _buildGenderBadge(String? sex) {
+    final isMale = sex == 'male';
+    final isFemale = sex == 'female';
+    final icon = isMale ? Icons.male_rounded : (isFemale ? Icons.female_rounded : Icons.device_unknown_rounded);
+    final bg = isMale ? const Color(0xFFE3F2FD) : (isFemale ? const Color(0xFFFCE4EC) : const Color(0xFFECEFF1));
+    final fg = isMale ? const Color(0xFF1565C0) : (isFemale ? const Color(0xFFC2185B) : const Color(0xFF455A64));
+
+    return Container(
+      padding: const EdgeInsets.all(5),
+      decoration: BoxDecoration(
+        color: bg,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Icon(icon, size: 16, color: fg),
     );
   }
 
   Widget _buildInfo(Color color) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             pet.name,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1B4D3E)),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 4),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              pet.species,
-              style: TextStyle(
-                fontSize: 11,
-                color: color,
-                fontWeight: FontWeight.w600,
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.09),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  _speciesLabel(pet.species),
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            pet.ageString,
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              const Icon(Icons.cake_outlined, size: 12, color: Colors.grey),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  pet.ageString,
+                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
+  }
+
+  String _speciesLabel(String s) {
+    switch (s.toLowerCase()) {
+      case 'perro':
+        return '🐶 Perro';
+      case 'gato':
+        return '🐱 Gato';
+      case 'ave':
+        return '🦜 Ave';
+      case 'conejo':
+        return '🐰 Conejo';
+      case 'reptil':
+        return '🦎 Reptil';
+      default:
+        return '🧩 Otro';
+    }
   }
 
   IconData _speciesIcon(String s) {
@@ -466,17 +608,17 @@ class _PetCard extends StatelessWidget {
   Color _speciesColor(String s) {
     switch (s.toLowerCase()) {
       case 'perro':
-        return const Color(0xFF1565C0);
+        return const Color(0xFF2B86C5);
       case 'gato':
-        return const Color(0xFF6A1B9A);
+        return const Color(0xFF9B59B6);
       case 'ave':
-        return const Color(0xFF00838F);
+        return const Color(0xFF1ABC9C);
       case 'conejo':
-        return const Color(0xFFAD1457);
+        return const Color(0xFFFD746C);
       case 'reptil':
-        return const Color(0xFF2E7D32);
+        return const Color(0xFF27AE60);
       default:
-        return const Color(0xFF37474F);
+        return const Color(0xFF7F8C8D);
     }
   }
 }

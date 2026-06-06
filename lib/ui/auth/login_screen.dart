@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../pets/pet_list_screen.dart';
 import 'register_screen.dart';
@@ -114,40 +115,74 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF0B5945), Color(0xFF10B981)],
-          ),
-        ),
-        child: Column(
-          children: [
-            _buildHeader(),
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFF6FAF8),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(36)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 15,
-                      offset: Offset(0, -5),
-                    ),
-                  ],
-                ),
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(28, 36, 28, 28),
-                  child: _buildForm(),
-                ),
+      body: Stack(
+        children: [
+          // Background Gradient
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF1B4D3E), Color(0xFF3F826D)],
               ),
             ),
-          ],
-        ),
+          ),
+          // Decorative light circles for modern visual look
+          Positioned(
+            top: -50,
+            right: -50,
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.06),
+              ),
+            )
+            .animate(onPlay: (c) => c.repeat(reverse: true))
+            .scaleXY(begin: 0.9, end: 1.1, duration: 3000.ms, curve: Curves.easeInOut),
+          ),
+          Positioned(
+            top: 150,
+            left: -80,
+            child: Container(
+              width: 180,
+              height: 180,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.04),
+              ),
+            )
+            .animate(onPlay: (c) => c.repeat(reverse: true))
+            .scaleXY(begin: 0.8, end: 1.2, duration: 4000.ms, curve: Curves.easeInOut),
+          ),
+          Column(
+            children: [
+              _buildHeader(),
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF7FAF8),
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(36)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 15,
+                        offset: Offset(0, -5),
+                      ),
+                    ],
+                  ),
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(28, 36, 28, 28),
+                    child: _buildForm(),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -156,7 +191,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return SafeArea(
       bottom: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(28, 28, 28, 36),
+        padding: const EdgeInsets.fromLTRB(28, 20, 28, 28),
         child: Column(
           children: [
             Container(
@@ -175,7 +210,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 ],
               ),
               child: const Icon(Icons.pets, size: 48, color: Colors.white),
-            ),
+            )
+            .animate(onPlay: (c) => c.repeat(reverse: true))
+            .scaleXY(begin: 0.9, end: 1.1, duration: 1500.ms, curve: Curves.easeInOut)
+            .rotate(begin: -0.05, end: 0.05, duration: 1500.ms, curve: Curves.easeInOut),
             const SizedBox(height: 16),
             const Text(
               'VetCare',
@@ -185,13 +223,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 color: Colors.white,
                 letterSpacing: 1.5,
               ),
-            ),
+            ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.2, end: 0),
             const SizedBox(height: 6),
             const Text(
               'Expediente clínico para tus mascotas',
               style: TextStyle(fontSize: 14, color: Colors.white70, fontWeight: FontWeight.w500),
               textAlign: TextAlign.center,
-            ),
+            ).animate().fadeIn(delay: 200.ms, duration: 600.ms).slideY(begin: 0.2, end: 0),
           ],
         ),
       ),
@@ -208,12 +246,12 @@ class _LoginScreenState extends State<LoginScreen> {
             const Text(
               'Iniciar sesión',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
+            ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1, end: 0),
             const SizedBox(height: 6),
             Text(
               'Bienvenido de vuelta',
               style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
-            ),
+            ).animate().fadeIn(delay: 150.ms).slideY(begin: 0.1, end: 0),
             const SizedBox(height: 28),
             TextFormField(
               controller: _emailCtrl,
@@ -227,7 +265,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 if (!v.contains('@')) return 'Email inválido';
                 return null;
               },
-            ),
+            ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, end: 0),
             const SizedBox(height: 16),
             TextFormField(
               controller: _passwordCtrl,
@@ -246,7 +284,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               validator: (v) =>
                   (v == null || v.isEmpty) ? 'Campo requerido' : null,
-            ),
+            ).animate().fadeIn(delay: 250.ms).slideY(begin: 0.1, end: 0),
             const SizedBox(height: 32),
             SizedBox(
               height: 52,
@@ -263,13 +301,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       )
                     : const Text('Iniciar Sesión'),
               ),
-            ),
+            ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1, end: 0),
             const SizedBox(height: 16),
-            _buildDivider(),
+            _buildDivider().animate().fadeIn(delay: 350.ms),
             const SizedBox(height: 16),
-            _buildGoogleButton(vm),
+            _buildGoogleButton(vm).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1, end: 0),
             const SizedBox(height: 12),
-            _buildGithubButton(vm),
+            _buildGithubButton(vm).animate().fadeIn(delay: 450.ms).slideY(begin: 0.1, end: 0),
             const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -290,12 +328,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     'Regístrate',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF2E7D32),
+                      color: Color(0xFF1B4D3E),
                     ),
                   ),
                 ),
               ],
-            ),
+            ).animate().fadeIn(delay: 500.ms),
           ],
         ),
       ),

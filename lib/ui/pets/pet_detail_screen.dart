@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:printing/printing.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../data/models/consultation_model.dart';
 import '../../data/models/deworming_model.dart';
 import '../../data/models/pet_model.dart';
@@ -137,7 +138,7 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                     const Padding(
                       padding: EdgeInsets.all(32),
                       child: CircularProgressIndicator(
-                        color: Color(0xFF2E7D32),
+                        color: Color(0xFF1B4D3E),
                       ),
                     )
                   else ...[
@@ -182,8 +183,9 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
 
   SliverAppBar _buildSliverAppBar() {
     return SliverAppBar(
-      expandedHeight: 300,
+      expandedHeight: 320,
       pinned: true,
+      backgroundColor: const Color(0xFF1B4D3E),
       leading: IconButton(
         icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
         onPressed: () => Navigator.pop(context),
@@ -207,13 +209,13 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                   end: Alignment.bottomCenter,
                   colors: [
                     Colors.transparent,
-                    Colors.black.withValues(alpha: 0.65),
+                    Colors.black.withValues(alpha: 0.75),
                   ],
                 ),
               ),
             ),
             Positioned(
-              bottom: 20,
+              bottom: 24,
               left: 20,
               right: 20,
               child: Column(
@@ -223,20 +225,20 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                     _pet.name,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 30,
+                      fontSize: 34,
                       fontWeight: FontWeight.bold,
                     ),
-                  ),
-                  const SizedBox(height: 8),
+                  ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.15, end: 0),
+                  const SizedBox(height: 10),
                   Row(
                     children: [
-                      _badge(_pet.species, const Color(0xFF2E7D32)),
+                      _badge(_speciesEmojiLabel(_pet.species), const Color(0xFFE27B58)),
                       if (_pet.breed != null) ...[
                         const SizedBox(width: 8),
-                        _badge(_pet.breed!, Colors.blueGrey),
+                        _badge(_pet.breed!, Colors.white24),
                       ],
                     ],
-                  ),
+                  ).animate().fadeIn(delay: 200.ms, duration: 500.ms).slideY(begin: 0.15, end: 0),
                 ],
               ),
             ),
@@ -244,6 +246,23 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
         ),
       ),
     );
+  }
+
+  String _speciesEmojiLabel(String s) {
+    switch (s.toLowerCase()) {
+      case 'perro':
+        return '🐶 Perro';
+      case 'gato':
+        return '🐱 Gato';
+      case 'ave':
+        return '🦜 Ave';
+      case 'conejo':
+        return '🐰 Conejo';
+      case 'reptil':
+        return '🦎 Reptil';
+      default:
+        return '🧩 Otro';
+    }
   }
 
   Widget _buildHeroPhoto() {
@@ -262,7 +281,7 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
       gradient: LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [Color(0xFF1B5E20), Color(0xFF4CAF50)],
+        colors: [Color(0xFF1B4D3E), Color(0xFF3F826D)],
       ),
     ),
     child: const Center(
@@ -271,17 +290,17 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
   );
 
   Widget _badge(String text, Color color) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
     decoration: BoxDecoration(
-      color: color.withValues(alpha: 0.85),
-      borderRadius: BorderRadius.circular(12),
+      color: color,
+      borderRadius: BorderRadius.circular(14),
     ),
     child: Text(
       text,
       style: const TextStyle(
         color: Colors.white,
         fontSize: 13,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.bold,
       ),
     ),
   );
@@ -294,7 +313,7 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
           'Edad',
           _pet.ageString,
           const Color(0xFF1565C0),
-        ),
+        ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, end: 0),
       ),
       const SizedBox(width: 10),
       Expanded(
@@ -303,7 +322,7 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
           'Sexo',
           _pet.sexLabel,
           const Color(0xFF6A1B9A),
-        ),
+        ).animate().fadeIn(delay: 100.ms, duration: 400.ms).slideY(begin: 0.1, end: 0),
       ),
       const SizedBox(width: 10),
       Expanded(
@@ -315,34 +334,40 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                 : Icons.notifications_off_outlined,
             'Avisos',
             _pet.notificationsEnabled ? 'Activo' : 'Apagado',
-            const Color(0xFF2E7D32),
+            const Color(0xFF1B4D3E),
           ),
-        ),
+        ).animate().fadeIn(delay: 200.ms, duration: 400.ms).slideY(begin: 0.1, end: 0),
       ),
     ],
   );
 
   Widget _statCard(IconData icon, String label, String value, Color color) =>
-      Card(
+      Container(
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color.withValues(alpha: 0.15), width: 1),
+        ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
           child: Column(
             children: [
-              Icon(icon, color: color, size: 22),
-              const SizedBox(height: 6),
+              Icon(icon, color: color, size: 24),
+              const SizedBox(height: 8),
               Text(
                 label,
-                style: const TextStyle(fontSize: 11, color: Colors.grey),
+                style: TextStyle(fontSize: 11, color: color.withValues(alpha: 0.8), fontWeight: FontWeight.w600),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 4),
               Text(
                 value,
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 13,
+                  fontSize: 14,
+                  color: Color(0xFF1B4D3E),
                 ),
                 textAlign: TextAlign.center,
-                maxLines: 2,
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ],
@@ -702,7 +727,7 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
 
   Widget _vaccineTile(VaccineModel v, HistoryViewModel vm) {
     final overdue = v.isOverdue;
-    final dueColor = overdue ? Colors.red.shade600 : const Color(0xFF2E7D32);
+    final dueColor = overdue ? Colors.red.shade600 : const Color(0xFF1B4D3E);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
@@ -1010,12 +1035,12 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
           width: 38,
           height: 38,
           decoration: BoxDecoration(
-            color: const Color(0xFF2E7D32).withValues(alpha: 0.12),
+            color: const Color(0xFF1B4D3E).withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(10),
           ),
           child: const Icon(
             Icons.calendar_today_outlined,
-            color: Color(0xFF2E7D32),
+            color: Color(0xFF1B4D3E),
             size: 20,
           ),
         ),
@@ -1024,7 +1049,7 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
           style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
         ),
         children: [
-          _addButton('Agendar cita', const Color(0xFF2E7D32), () async {
+          _addButton('Agendar cita', const Color(0xFF1B4D3E), () async {
             await Navigator.push(
               context,
               MaterialPageRoute(
@@ -1100,7 +1125,7 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               IconButton(
-                icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF2E7D32)),
+                icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF1B4D3E)),
                 onPressed: () async {
                   await Navigator.push(
                     context,
@@ -1138,7 +1163,7 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
       lastDate: DateTime.now().add(const Duration(days: 365)),
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
-          colorScheme: const ColorScheme.light(primary: Color(0xFF2E7D32)),
+          colorScheme: const ColorScheme.light(primary: Color(0xFF1B4D3E)),
         ),
         child: child!,
       ),
@@ -1156,7 +1181,7 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
       builder: (ctx) => const AlertDialog(
         content: Row(
           children: [
-            CircularProgressIndicator(color: Color(0xFF2E7D32)),
+            CircularProgressIndicator(color: Color(0xFF1B4D3E)),
             SizedBox(width: 20),
             Text('Generando reporte PDF...'),
           ],
@@ -1184,7 +1209,7 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
           builder: (ctx) => Scaffold(
             appBar: AppBar(
               title: Text('Reporte - ${_pet.name}'),
-              backgroundColor: const Color(0xFF2E7D32),
+              backgroundColor: const Color(0xFF1B4D3E),
             ),
             body: PdfPreview(
               build: (format) => pdfBytes,

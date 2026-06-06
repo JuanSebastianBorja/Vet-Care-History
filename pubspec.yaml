@@ -63,6 +63,10 @@ dependencies:
   google_sign_in: ^6.2.1
   flutter_timezone: ^5.1.0
 
+  # Visual and Animation packages
+  google_fonts: ^6.2.1
+  flutter_animate: ^4.5.2
+
 
 dev_dependencies:
   flutter_test:

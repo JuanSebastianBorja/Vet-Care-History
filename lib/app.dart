@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'data/services/app_sync_service.dart';
 import 'viewmodels/auth_viewmodel.dart';
 import 'viewmodels/history_viewmodel.dart';
@@ -33,21 +35,20 @@ class VetCareApp extends StatelessWidget {
   }
 
   ThemeData _buildTheme() {
-    const primary = Color(0xFF0B5945);
+    const primary = Color(0xFF1B4D3E); // Elegant forest green
+    const secondary = Color(0xFFE27B58); // Friendly warm coral
+    const background = Color(0xFFF7FAF8); // Super soft warm off-white/cream
 
-    return ThemeData(
+    final baseTheme = ThemeData(
       useMaterial3: true,
-      colorScheme:
-          ColorScheme.fromSeed(
-            seedColor: primary,
-            brightness: Brightness.light,
-          ).copyWith(
-            primary: primary,
-            onPrimary: Colors.white,
-            secondary: const Color(0xFF10B981),
-            surface: Colors.white,
-          ),
-      scaffoldBackgroundColor: const Color(0xFFF6FAF8),
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: primary,
+        primary: primary,
+        secondary: secondary,
+        surface: Colors.white,
+        brightness: Brightness.light,
+      ),
+      scaffoldBackgroundColor: background,
       appBarTheme: const AppBarTheme(
         backgroundColor: primary,
         foregroundColor: Colors.white,
@@ -62,11 +63,12 @@ class VetCareApp extends StatelessWidget {
         iconTheme: IconThemeData(color: Colors.white),
       ),
       cardTheme: CardThemeData(
-        elevation: 0,
+        elevation: 2,
+        shadowColor: primary.withValues(alpha: 0.06),
         color: Colors.white,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: Colors.grey.shade100),
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: Color(0xFFEEF3F0)),
         ),
         margin: EdgeInsets.zero,
       ),
@@ -75,55 +77,66 @@ class VetCareApp extends StatelessWidget {
           backgroundColor: primary,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(16),
           ),
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
           textStyle: const TextStyle(
             fontSize: 16,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.bold,
             letterSpacing: 0.5,
           ),
-          elevation: 0,
+          elevation: 2,
+          shadowColor: primary.withValues(alpha: 0.2),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFFF8F8F8),
+        fillColor: Colors.white,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade200),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Color(0xFFE0E6E2)),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade200),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Color(0xFFE0E6E2)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: primary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Colors.redAccent),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 2),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Colors.redAccent, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 16,
+          horizontal: 20,
+          vertical: 18,
         ),
+        labelStyle: const TextStyle(color: Color(0xFF6B7A72)),
+        floatingLabelStyle: const TextStyle(color: primary, fontWeight: FontWeight.bold),
       ),
       chipTheme: ChipThemeData(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        padding: const EdgeInsets.symmetric(horizontal: 4),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        side: const BorderSide(color: Colors.transparent),
+        backgroundColor: const Color(0xFFEEF3F0),
+        selectedColor: primary,
+        secondarySelectedColor: primary,
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: primary,
+        backgroundColor: secondary,
         foregroundColor: Colors.white,
         elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       ),
+    );
+
+    return baseTheme.copyWith(
+      textTheme: GoogleFonts.fredokaTextTheme(baseTheme.textTheme),
     );
   }
 }
@@ -174,15 +187,38 @@ class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
       builder: (context, viewModel, child) {
         // Pantalla de carga mientras se verifica la sesión.
         if (viewModel.isLoading) {
-          return const Scaffold(
-            backgroundColor: Color(0xFF2E7D32),
+          return Scaffold(
+            backgroundColor: const Color(0xFF1B4D3E),
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.pets, size: 72, color: Colors.white54),
-                  SizedBox(height: 32),
-                  CircularProgressIndicator(color: Colors.white),
+                  const Icon(Icons.pets, size: 80, color: Colors.white)
+                      .animate(onPlay: (c) => c.repeat(reverse: true))
+                      .scaleXY(begin: 0.8, end: 1.2, duration: 800.ms, curve: Curves.easeInOut)
+                      .rotate(begin: -0.05, end: 0.05, duration: 800.ms, curve: Curves.easeInOut),
+                  const SizedBox(height: 40),
+                  const Text(
+                    'Cargando VetCare...',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.8,
+                    ),
+                  )
+                      .animate(onPlay: (c) => c.repeat(reverse: true))
+                      .fadeIn(duration: 800.ms)
+                      .then()
+                      .fadeOut(duration: 800.ms),
+                  const SizedBox(height: 24),
+                  const SizedBox(
+                    width: 48,
+                    child: LinearProgressIndicator(
+                      color: Color(0xFFE27B58),
+                      backgroundColor: Colors.white24,
+                    ),
+                  ),
                 ],
               ),
             ),

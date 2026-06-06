@@ -65,7 +65,7 @@ class _AppointmentFormScreenState extends State<AppointmentFormScreen> {
       lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
-          colorScheme: const ColorScheme.light(primary: Color(0xFF2E7D32)),
+          colorScheme: const ColorScheme.light(primary: Color(0xFF1B4D3E)),
         ),
         child: child!,
       ),
@@ -81,7 +81,7 @@ class _AppointmentFormScreenState extends State<AppointmentFormScreen> {
       initialTime: _selectedTime,
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
-          colorScheme: const ColorScheme.light(primary: Color(0xFF2E7D32)),
+          colorScheme: const ColorScheme.light(primary: Color(0xFF1B4D3E)),
         ),
         child: child!,
       ),
@@ -143,7 +143,7 @@ class _AppointmentFormScreenState extends State<AppointmentFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final themeColor = const Color(0xFF2E7D32);
+    final themeColor = const Color(0xFF1B4D3E);
 
     return Scaffold(
       appBar: AppBar(
@@ -267,9 +267,9 @@ class _AppointmentFormScreenState extends State<AppointmentFormScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
-          color: const Color(0xFFF8F8F8),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE0E6E2)),
         ),
         child: Row(
           children: [
