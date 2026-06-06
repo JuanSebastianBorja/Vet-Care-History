@@ -4,6 +4,10 @@ import 'dart:async';
 import '../data/models/pet_model.dart';
 import '../data/repositories/pet_repository.dart';
 
+/// ViewModel encargado de gestionar el estado de las mascotas en la interfaz de usuario.
+///
+/// Expone listas reactivas filtradas, variables de carga y error, y coordina las
+/// acciones del usuario (agregar, editar, eliminar, notificaciones) con el [PetRepository].
 class PetViewModel extends ChangeNotifier {
   final PetRepository _repository = PetRepository();
   StreamSubscription<int>? _pendingSyncSub;
@@ -16,13 +20,25 @@ class PetViewModel extends ChangeNotifier {
   String _speciesFilter = 'Todos';
   int _pendingSyncCount = 0;
 
+  /// Retorna la lista filtrada de mascotas para mostrar en la interfaz.
   List<PetModel> get pets => _filtered;
+
+  /// Indica si hay mascotas registradas para el usuario actual.
   bool get hasPets => _pets.isNotEmpty;
+
+  /// Indica si hay una operación de carga o mutación en proceso.
   bool get isLoading => _isLoading;
+
+  /// Retorna el último mensaje de error ocurrido, o null si no hay errores.
   String? get error => _error;
+
+  /// Filtro por especie seleccionado actualmente (ej. 'Todos', 'Perro', 'Gato').
   String get speciesFilter => _speciesFilter;
+
+  /// Cantidad de acciones pendientes en la cola de sincronización local.
   int get pendingSyncCount => _pendingSyncCount;
 
+  /// Inicializa el ViewModel y se suscribe al flujo de conteo de sincronización de la base de datos local.
   PetViewModel() {
     _pendingSyncSub = _repository.watchPendingSyncCount().listen((count) {
       _pendingSyncCount = count;
@@ -36,6 +52,7 @@ class PetViewModel extends ChangeNotifier {
     super.dispose();
   }
 
+  /// Carga la lista de mascotas del usuario desde el repositorio local/remoto.
   Future<void> loadPets(String userId) async {
     _isLoading = true;
     _error = null;
@@ -50,12 +67,14 @@ class PetViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Establece el término de búsqueda de la mascota por nombre y aplica los filtros.
   void setSearch(String query) {
     _searchQuery = query;
     _applyFilters();
     notifyListeners();
   }
 
+  /// Establece el filtro de especie seleccionado y aplica los filtros.
   void setSpeciesFilter(String species) {
     _speciesFilter = species;
     _applyFilters();

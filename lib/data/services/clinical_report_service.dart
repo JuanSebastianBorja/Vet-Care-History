@@ -7,7 +7,16 @@ import '../models/consultation_model.dart';
 import '../models/vaccine_model.dart';
 import '../models/deworming_model.dart';
 
+/// Servicio para generar reportes médicos consolidados en formato PDF.
+///
+/// Utiliza la biblioteca `pdf` para construir dinámicamente un documento estructurado
+/// y guardarlo directamente en el almacenamiento del dispositivo móvil.
 class ClinicalReportService {
+  /// Genera un reporte clínico consolidado en PDF y lo guarda en el directorio de descargas del dispositivo.
+  ///
+  /// El reporte incluye información detallada de la mascota y sus listas filtradas de
+  /// consultas, vacunas y desparasitaciones dentro de un rango opcional de fechas ([startDate] - [endDate]).
+  /// Retorna la ruta absoluta del archivo PDF creado.
   static Future<String> generateAndSaveReport({
     required PetModel pet,
     required List<ConsultationModel> consultations,
