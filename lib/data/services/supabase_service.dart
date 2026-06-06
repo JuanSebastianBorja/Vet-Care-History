@@ -28,6 +28,9 @@ class SupabaseService {
       );
 
       if (response.user != null) {
+        if (response.user!.identities != null && response.user!.identities!.isEmpty) {
+          throw Exception('Este correo ya tiene una cuenta.');
+        }
         return UserModel(
           id: response.user!.id,
           email: response.user!.email!,
