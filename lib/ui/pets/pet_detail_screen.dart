@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:printing/printing.dart';
 import '../../data/models/consultation_model.dart';
 import '../../data/models/deworming_model.dart';
 import '../../data/models/pet_model.dart';
 import '../../data/models/vaccine_model.dart';
+import '../../data/models/appointment_model.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/history_viewmodel.dart';
 import '../../viewmodels/pet_viewmodel.dart';
+import '../../data/services/report_service.dart';
 import '../consultations/consultation_form_screen.dart';
 import '../dewormings/deworming_form_screen.dart';
 import '../vaccines/vaccine_form_screen.dart';
+import '../appointments/appointment_form_screen.dart';
 import 'pet_form_screen.dart';
+import 'pet_photo_image.dart';
 
 class PetDetailScreen extends StatefulWidget {
   final PetModel initialPet;
@@ -61,7 +66,7 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Eliminar mascota'),
         content: Text(
-          '¿Eliminar a ${_pet.name}? Se borrará todo su historial.',
+          '¿Eliminar a ${_pet.name}? Esta acción no se puede deshacer.',
         ),
         actions: [
           TextButton(
@@ -141,6 +146,10 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                     _buildVaccineSection(histVm),
                     const SizedBox(height: 12),
                     _buildDewormingSection(histVm),
+                    const SizedBox(height: 12),
+                    _buildPhotosSection(histVm),
+                    const SizedBox(height: 12),
+                    _buildAppointmentSection(histVm),
                   ],
                 ],
               ),
@@ -179,6 +188,13 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
         icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
         onPressed: () => Navigator.pop(context),
       ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.picture_as_pdf_outlined, color: Colors.white),
+          tooltip: 'Generar Reporte Clínico',
+          onPressed: _showReportDateRangePicker,
+        ),
+      ],
       flexibleSpace: FlexibleSpaceBar(
         background: Stack(
           fit: StackFit.expand,
@@ -231,11 +247,11 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
   }
 
   Widget _buildHeroPhoto() {
-    if (_pet.photoUrl != null) {
-      return Image.network(
-        _pet.photoUrl!,
+    if (_pet.displayPhotoSource != null) {
+      return PetPhotoImage(
+        pet: _pet,
         fit: BoxFit.cover,
-        errorBuilder: (ctx, err, stack) => _photoPlaceholder(),
+        placeholder: _photoPlaceholder,
       );
     }
     return _photoPlaceholder();
@@ -272,61 +288,64 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
 
   Widget _buildStatRow() => Row(
     children: [
-      _statCard(
-        Icons.cake_outlined,
-        'Edad',
-        _pet.ageString,
-        const Color(0xFF1565C0),
-      ),
-      const SizedBox(width: 10),
-      _statCard(
-        Icons.wc_outlined,
-        'Sexo',
-        _pet.sexLabel,
-        const Color(0xFF6A1B9A),
-      ),
-      const SizedBox(width: 10),
-      // Envuelve la tarjeta de Avisos en un GestureDetector
-      GestureDetector(
-        onTap: _toggleNotifications,
+      Expanded(
         child: _statCard(
-          _pet.notificationsEnabled
-              ? Icons.notifications_active_outlined
-              : Icons.notifications_off_outlined,
-          'Avisos',
-          _pet.notificationsEnabled ? 'Activo' : 'Apagado',
-          const Color(0xFF2E7D32),
+          Icons.cake_outlined,
+          'Edad',
+          _pet.ageString,
+          const Color(0xFF1565C0),
+        ),
+      ),
+      const SizedBox(width: 10),
+      Expanded(
+        child: _statCard(
+          Icons.wc_outlined,
+          'Sexo',
+          _pet.sexLabel,
+          const Color(0xFF6A1B9A),
+        ),
+      ),
+      const SizedBox(width: 10),
+      Expanded(
+        child: GestureDetector(
+          onTap: _toggleNotifications,
+          child: _statCard(
+            _pet.notificationsEnabled
+                ? Icons.notifications_active_outlined
+                : Icons.notifications_off_outlined,
+            'Avisos',
+            _pet.notificationsEnabled ? 'Activo' : 'Apagado',
+            const Color(0xFF2E7D32),
+          ),
         ),
       ),
     ],
   );
 
   Widget _statCard(IconData icon, String label, String value, Color color) =>
-      Expanded(
-        child: Card(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-            child: Column(
-              children: [
-                Icon(icon, color: color, size: 22),
-                const SizedBox(height: 6),
-                Text(
-                  label,
-                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+      Card(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+          child: Column(
+            children: [
+              Icon(icon, color: color, size: 22),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                style: const TextStyle(fontSize: 11, color: Colors.grey),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
         ),
       );
@@ -505,21 +524,60 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                     scrollDirection: Axis.horizontal,
                     itemCount: c.photos.length,
                     separatorBuilder: (ctx, i) => const SizedBox(width: 6),
-                    itemBuilder: (ctx, i) => ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        c.photos[i].photoUrl,
-                        width: 60,
-                        height: 60,
-                        fit: BoxFit.cover,
-                        errorBuilder: (ctx, err, stack) => Container(
-                          width: 60,
-                          height: 60,
-                          color: Colors.grey.shade200,
-                          child: const Icon(Icons.broken_image, size: 20),
+                    itemBuilder: (ctx, i) {
+                      final p = c.photos[i];
+                      return GestureDetector(
+                        onTap: () => _openFullScreenPhoto(p.photoUrl),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            p.photoUrl,
+                            width: 60,
+                            height: 60,
+                            fit: BoxFit.cover,
+                            errorBuilder: (ctx, err, stack) => Container(
+                              width: 60,
+                              height: 60,
+                              color: Colors.grey.shade200,
+                              child: const Icon(Icons.broken_image, size: 20),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+              if (hasPendingPhotos) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF8E1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFFFE082)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.cloud_upload_outlined,
+                        size: 12,
+                        color: Color(0xFF8D6E63),
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        'Fotos pendientes de sincronizar',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF5D4037),
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
               ],
@@ -671,14 +729,16 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                 'Aplicada: ${v.applicationDateStr}',
                 style: const TextStyle(fontSize: 12),
               ),
-              Row(
+              Wrap(
+                spacing: 4,
+                runSpacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Text(
                     'Próxima: ${v.nextDueDateStr}',
                     style: TextStyle(fontSize: 12, color: dueColor),
                   ),
-                  if (overdue) ...[
-                    const SizedBox(width: 4),
+                  if (overdue)
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 4,
@@ -697,7 +757,6 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                         ),
                       ),
                     ),
-                  ],
                 ],
               ),
             ],
@@ -815,14 +874,16 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(d.detailStr, style: const TextStyle(fontSize: 12)),
-              Row(
+              Wrap(
+                spacing: 4,
+                runSpacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Text(
                     'Próxima: ${d.nextDueDateStr}',
                     style: TextStyle(fontSize: 12, color: dueColor),
                   ),
-                  if (overdue) ...[
-                    const SizedBox(width: 4),
+                  if (overdue)
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 4,
@@ -841,7 +902,6 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
                         ),
                       ),
                     ),
-                  ],
                 ],
               ),
             ],
@@ -925,7 +985,11 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
 
     final success = await vm.togglePetNotifications(_pet.id, newValue);
 
-    if (!success && mounted) {
+    if (success) {
+      if (mounted) {
+        await context.read<HistoryViewModel>().updateNotificationsState(newValue, _pet.name);
+      }
+    } else if (mounted) {
       // Revertir si falló
       setState(() {
         _pet = _pet.copyWith(notificationsEnabled: !newValue);
@@ -937,5 +1001,315 @@ class _PetDetailScreenState extends State<PetDetailScreen> {
         ),
       );
     }
+  }
+
+  Widget _buildAppointmentSection(HistoryViewModel vm) {
+    return Card(
+      child: ExpansionTile(
+        leading: Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: const Color(0xFF2E7D32).withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(
+            Icons.calendar_today_outlined,
+            color: Color(0xFF2E7D32),
+            size: 20,
+          ),
+        ),
+        title: Text(
+          'Citas Veterinarias (${vm.appointments.length})',
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+        ),
+        children: [
+          _addButton('Agendar cita', const Color(0xFF2E7D32), () async {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => AppointmentFormScreen(
+                  petId: _pet.id,
+                  petName: _pet.name,
+                ),
+              ),
+            );
+            _reload();
+          }),
+          if (vm.appointments.isEmpty)
+            _emptyState(Icons.calendar_today_outlined)
+          else
+            ...vm.appointments.map((a) => _appointmentTile(a, vm)),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
+  Widget _appointmentTile(AppointmentModel a, HistoryViewModel vm) {
+    final statusColor = a.status == 'completed'
+        ? Colors.blue.shade600
+        : a.status == 'cancelled'
+            ? Colors.red.shade600
+            : Colors.orange.shade700;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+      child: Card(
+        color: const Color(0xFFF5FAF5),
+        child: ListTile(
+          leading: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: statusColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(Icons.event_outlined, color: statusColor, size: 20),
+          ),
+          title: Text(
+            a.motive,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Fecha: ${a.dateStr} a las ${a.timeStr}'),
+              if (a.veterinarianName != null)
+                Text('Vet: ${a.veterinarianName}'),
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  a.statusLabel.toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 9,
+                    color: statusColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          isThreeLine: true,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF2E7D32)),
+                onPressed: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AppointmentFormScreen(
+                        petId: _pet.id,
+                        petName: _pet.name,
+                        appointment: a,
+                      ),
+                    ),
+                  );
+                  _reload();
+                },
+                visualDensity: VisualDensity.compact,
+              ),
+              IconButton(
+                icon: Icon(Icons.delete_outline, size: 18, color: Colors.red.shade400),
+                onPressed: () => _confirmDelete(
+                  'cita',
+                  () => vm.deleteAppointment(a.id),
+                ),
+                visualDensity: VisualDensity.compact,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showReportDateRangePicker() async {
+    final pickedRange = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (ctx, child) => Theme(
+        data: Theme.of(ctx).copyWith(
+          colorScheme: const ColorScheme.light(primary: Color(0xFF2E7D32)),
+        ),
+        child: child!,
+      ),
+    );
+
+    if (pickedRange == null) return;
+
+    _generateReport(pickedRange.start, pickedRange.end);
+  }
+
+  Future<void> _generateReport(DateTime start, DateTime end) async {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(color: Color(0xFF2E7D32)),
+            SizedBox(width: 20),
+            Text('Generando reporte PDF...'),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      final histVm = context.read<HistoryViewModel>();
+      final pdfBytes = await ReportService().generateClinicalReport(
+        pet: _pet,
+        consultations: histVm.consultations,
+        vaccines: histVm.vaccines,
+        dewormings: histVm.dewormings,
+        startDate: start,
+        endDate: end,
+      );
+
+      if (!mounted) return;
+      Navigator.pop(context); // Cerrar diálogo de progreso
+
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (ctx) => Scaffold(
+            appBar: AppBar(
+              title: Text('Reporte - ${_pet.name}'),
+              backgroundColor: const Color(0xFF2E7D32),
+            ),
+            body: PdfPreview(
+              build: (format) => pdfBytes,
+              onPrinted: (context) => print('Impreso con éxito'),
+              onShared: (context) => print('Compartido con éxito'),
+              allowPrinting: true,
+              allowSharing: true,
+              canChangeOrientation: false,
+              canChangePageFormat: false,
+            ),
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Cerrar diálogo de progreso
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al generar PDF: $e'),
+            backgroundColor: Colors.red.shade600,
+          ),
+        );
+      }
+    }
+  }
+
+  void _openFullScreenPhoto(String url) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.black,
+            iconTheme: const IconThemeData(color: Colors.white),
+          ),
+          body: Center(
+            child: InteractiveViewer(
+              clipBehavior: Clip.none,
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: Image.network(
+                url,
+                fit: BoxFit.contain,
+                loadingBuilder: (_, child, progress) => progress == null
+                    ? child
+                    : const CircularProgressIndicator(color: Colors.white),
+                errorBuilder: (_, __, ___) => const Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.broken_image, color: Colors.white54, size: 48),
+                    SizedBox(height: 8),
+                    Text('No se pudo cargar la imagen', style: TextStyle(color: Colors.white54)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPhotosSection(HistoryViewModel vm) {
+    final allPhotos = vm.consultations.expand((c) => c.photos).toList();
+
+    return Card(
+      child: ExpansionTile(
+        leading: Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: const Color(0xFFAD1457).withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(
+            Icons.photo_library_outlined,
+            color: Color(0xFFAD1457),
+            size: 20,
+          ),
+        ),
+        title: Text(
+          'Fotos de Exámenes (${allPhotos.length})',
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+        ),
+        children: [
+          if (allPhotos.isEmpty)
+            _emptyState(Icons.photo_library_outlined)
+          else
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                ),
+                itemCount: allPhotos.length,
+                itemBuilder: (context, index) {
+                  final photo = allPhotos[index];
+                  return GestureDetector(
+                    onTap: () => _openFullScreenPhoto(photo.photoUrl),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        photo.photoUrl,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (_, child, progress) => progress == null
+                            ? child
+                            : const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                        errorBuilder: (_, __, ___) => Container(
+                          color: Colors.grey.shade100,
+                          child: const Icon(Icons.broken_image, color: Colors.grey),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
   }
 }

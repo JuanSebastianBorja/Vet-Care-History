@@ -87,6 +87,17 @@ class $LocalPetsTable extends LocalPets
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _localPhotoPathMeta = const VerificationMeta(
+    'localPhotoPath',
+  );
+  @override
+  late final GeneratedColumn<String> localPhotoPath = GeneratedColumn<String>(
+    'local_photo_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _notificationsEnabledMeta =
       const VerificationMeta('notificationsEnabled');
   @override
@@ -147,6 +158,7 @@ class $LocalPetsTable extends LocalPets
     birthDate,
     sex,
     photoUrl,
+    localPhotoPath,
     notificationsEnabled,
     createdAt,
     syncState,
@@ -215,6 +227,15 @@ class $LocalPetsTable extends LocalPets
       context.handle(
         _photoUrlMeta,
         photoUrl.isAcceptableOrUnknown(data['photo_url']!, _photoUrlMeta),
+      );
+    }
+    if (data.containsKey('local_photo_path')) {
+      context.handle(
+        _localPhotoPathMeta,
+        localPhotoPath.isAcceptableOrUnknown(
+          data['local_photo_path']!,
+          _localPhotoPathMeta,
+        ),
       );
     }
     if (data.containsKey('notifications_enabled')) {
@@ -290,6 +311,10 @@ class $LocalPetsTable extends LocalPets
         DriftSqlType.string,
         data['${effectivePrefix}photo_url'],
       ),
+      localPhotoPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}local_photo_path'],
+      ),
       notificationsEnabled: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}notifications_enabled'],
@@ -324,6 +349,9 @@ class LocalPet extends DataClass implements Insertable<LocalPet> {
   final DateTime? birthDate;
   final String? sex;
   final String? photoUrl;
+
+  /// Ruta local de foto pendiente de subir cuando no hay conexion.
+  final String? localPhotoPath;
   final bool notificationsEnabled;
   final DateTime createdAt;
   final String syncState;
@@ -337,6 +365,7 @@ class LocalPet extends DataClass implements Insertable<LocalPet> {
     this.birthDate,
     this.sex,
     this.photoUrl,
+    this.localPhotoPath,
     required this.notificationsEnabled,
     required this.createdAt,
     required this.syncState,
@@ -361,6 +390,9 @@ class LocalPet extends DataClass implements Insertable<LocalPet> {
     if (!nullToAbsent || photoUrl != null) {
       map['photo_url'] = Variable<String>(photoUrl);
     }
+    if (!nullToAbsent || localPhotoPath != null) {
+      map['local_photo_path'] = Variable<String>(localPhotoPath);
+    }
     map['notifications_enabled'] = Variable<bool>(notificationsEnabled);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['sync_state'] = Variable<String>(syncState);
@@ -384,6 +416,9 @@ class LocalPet extends DataClass implements Insertable<LocalPet> {
       photoUrl: photoUrl == null && nullToAbsent
           ? const Value.absent()
           : Value(photoUrl),
+      localPhotoPath: localPhotoPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(localPhotoPath),
       notificationsEnabled: Value(notificationsEnabled),
       createdAt: Value(createdAt),
       syncState: Value(syncState),
@@ -405,6 +440,7 @@ class LocalPet extends DataClass implements Insertable<LocalPet> {
       birthDate: serializer.fromJson<DateTime?>(json['birthDate']),
       sex: serializer.fromJson<String?>(json['sex']),
       photoUrl: serializer.fromJson<String?>(json['photoUrl']),
+      localPhotoPath: serializer.fromJson<String?>(json['localPhotoPath']),
       notificationsEnabled: serializer.fromJson<bool>(
         json['notificationsEnabled'],
       ),
@@ -425,6 +461,7 @@ class LocalPet extends DataClass implements Insertable<LocalPet> {
       'birthDate': serializer.toJson<DateTime?>(birthDate),
       'sex': serializer.toJson<String?>(sex),
       'photoUrl': serializer.toJson<String?>(photoUrl),
+      'localPhotoPath': serializer.toJson<String?>(localPhotoPath),
       'notificationsEnabled': serializer.toJson<bool>(notificationsEnabled),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'syncState': serializer.toJson<String>(syncState),
@@ -441,6 +478,7 @@ class LocalPet extends DataClass implements Insertable<LocalPet> {
     Value<DateTime?> birthDate = const Value.absent(),
     Value<String?> sex = const Value.absent(),
     Value<String?> photoUrl = const Value.absent(),
+    Value<String?> localPhotoPath = const Value.absent(),
     bool? notificationsEnabled,
     DateTime? createdAt,
     String? syncState,
@@ -454,6 +492,9 @@ class LocalPet extends DataClass implements Insertable<LocalPet> {
     birthDate: birthDate.present ? birthDate.value : this.birthDate,
     sex: sex.present ? sex.value : this.sex,
     photoUrl: photoUrl.present ? photoUrl.value : this.photoUrl,
+    localPhotoPath: localPhotoPath.present
+        ? localPhotoPath.value
+        : this.localPhotoPath,
     notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
     createdAt: createdAt ?? this.createdAt,
     syncState: syncState ?? this.syncState,
@@ -469,6 +510,9 @@ class LocalPet extends DataClass implements Insertable<LocalPet> {
       birthDate: data.birthDate.present ? data.birthDate.value : this.birthDate,
       sex: data.sex.present ? data.sex.value : this.sex,
       photoUrl: data.photoUrl.present ? data.photoUrl.value : this.photoUrl,
+      localPhotoPath: data.localPhotoPath.present
+          ? data.localPhotoPath.value
+          : this.localPhotoPath,
       notificationsEnabled: data.notificationsEnabled.present
           ? data.notificationsEnabled.value
           : this.notificationsEnabled,
@@ -491,6 +535,7 @@ class LocalPet extends DataClass implements Insertable<LocalPet> {
           ..write('birthDate: $birthDate, ')
           ..write('sex: $sex, ')
           ..write('photoUrl: $photoUrl, ')
+          ..write('localPhotoPath: $localPhotoPath, ')
           ..write('notificationsEnabled: $notificationsEnabled, ')
           ..write('createdAt: $createdAt, ')
           ..write('syncState: $syncState, ')
@@ -509,6 +554,7 @@ class LocalPet extends DataClass implements Insertable<LocalPet> {
     birthDate,
     sex,
     photoUrl,
+    localPhotoPath,
     notificationsEnabled,
     createdAt,
     syncState,
@@ -526,6 +572,7 @@ class LocalPet extends DataClass implements Insertable<LocalPet> {
           other.birthDate == this.birthDate &&
           other.sex == this.sex &&
           other.photoUrl == this.photoUrl &&
+          other.localPhotoPath == this.localPhotoPath &&
           other.notificationsEnabled == this.notificationsEnabled &&
           other.createdAt == this.createdAt &&
           other.syncState == this.syncState &&
@@ -541,6 +588,7 @@ class LocalPetsCompanion extends UpdateCompanion<LocalPet> {
   final Value<DateTime?> birthDate;
   final Value<String?> sex;
   final Value<String?> photoUrl;
+  final Value<String?> localPhotoPath;
   final Value<bool> notificationsEnabled;
   final Value<DateTime> createdAt;
   final Value<String> syncState;
@@ -555,6 +603,7 @@ class LocalPetsCompanion extends UpdateCompanion<LocalPet> {
     this.birthDate = const Value.absent(),
     this.sex = const Value.absent(),
     this.photoUrl = const Value.absent(),
+    this.localPhotoPath = const Value.absent(),
     this.notificationsEnabled = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.syncState = const Value.absent(),
@@ -570,6 +619,7 @@ class LocalPetsCompanion extends UpdateCompanion<LocalPet> {
     this.birthDate = const Value.absent(),
     this.sex = const Value.absent(),
     this.photoUrl = const Value.absent(),
+    this.localPhotoPath = const Value.absent(),
     this.notificationsEnabled = const Value.absent(),
     required DateTime createdAt,
     this.syncState = const Value.absent(),
@@ -589,6 +639,7 @@ class LocalPetsCompanion extends UpdateCompanion<LocalPet> {
     Expression<DateTime>? birthDate,
     Expression<String>? sex,
     Expression<String>? photoUrl,
+    Expression<String>? localPhotoPath,
     Expression<bool>? notificationsEnabled,
     Expression<DateTime>? createdAt,
     Expression<String>? syncState,
@@ -604,6 +655,7 @@ class LocalPetsCompanion extends UpdateCompanion<LocalPet> {
       if (birthDate != null) 'birth_date': birthDate,
       if (sex != null) 'sex': sex,
       if (photoUrl != null) 'photo_url': photoUrl,
+      if (localPhotoPath != null) 'local_photo_path': localPhotoPath,
       if (notificationsEnabled != null)
         'notifications_enabled': notificationsEnabled,
       if (createdAt != null) 'created_at': createdAt,
@@ -622,6 +674,7 @@ class LocalPetsCompanion extends UpdateCompanion<LocalPet> {
     Value<DateTime?>? birthDate,
     Value<String?>? sex,
     Value<String?>? photoUrl,
+    Value<String?>? localPhotoPath,
     Value<bool>? notificationsEnabled,
     Value<DateTime>? createdAt,
     Value<String>? syncState,
@@ -637,6 +690,7 @@ class LocalPetsCompanion extends UpdateCompanion<LocalPet> {
       birthDate: birthDate ?? this.birthDate,
       sex: sex ?? this.sex,
       photoUrl: photoUrl ?? this.photoUrl,
+      localPhotoPath: localPhotoPath ?? this.localPhotoPath,
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       createdAt: createdAt ?? this.createdAt,
       syncState: syncState ?? this.syncState,
@@ -672,6 +726,9 @@ class LocalPetsCompanion extends UpdateCompanion<LocalPet> {
     if (photoUrl.present) {
       map['photo_url'] = Variable<String>(photoUrl.value);
     }
+    if (localPhotoPath.present) {
+      map['local_photo_path'] = Variable<String>(localPhotoPath.value);
+    }
     if (notificationsEnabled.present) {
       map['notifications_enabled'] = Variable<bool>(notificationsEnabled.value);
     }
@@ -701,6 +758,7 @@ class LocalPetsCompanion extends UpdateCompanion<LocalPet> {
           ..write('birthDate: $birthDate, ')
           ..write('sex: $sex, ')
           ..write('photoUrl: $photoUrl, ')
+          ..write('localPhotoPath: $localPhotoPath, ')
           ..write('notificationsEnabled: $notificationsEnabled, ')
           ..write('createdAt: $createdAt, ')
           ..write('syncState: $syncState, ')
@@ -3394,6 +3452,626 @@ class PendingConsultationPhotosCompanion
   }
 }
 
+class $LocalAppointmentsTable extends LocalAppointments
+    with TableInfo<$LocalAppointmentsTable, LocalAppointment> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LocalAppointmentsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _petIdMeta = const VerificationMeta('petId');
+  @override
+  late final GeneratedColumn<String> petId = GeneratedColumn<String>(
+    'pet_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _appointmentDatetimeMeta =
+      const VerificationMeta('appointmentDatetime');
+  @override
+  late final GeneratedColumn<DateTime> appointmentDatetime =
+      GeneratedColumn<DateTime>(
+        'appointment_datetime',
+        aliasedName,
+        false,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _veterinarianNameMeta = const VerificationMeta(
+    'veterinarianName',
+  );
+  @override
+  late final GeneratedColumn<String> veterinarianName = GeneratedColumn<String>(
+    'veterinarian_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _motiveMeta = const VerificationMeta('motive');
+  @override
+  late final GeneratedColumn<String> motive = GeneratedColumn<String>(
+    'motive',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('pending'),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _syncStateMeta = const VerificationMeta(
+    'syncState',
+  );
+  @override
+  late final GeneratedColumn<String> syncState = GeneratedColumn<String>(
+    'sync_state',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('synced'),
+  );
+  static const VerificationMeta _localUpdatedAtMeta = const VerificationMeta(
+    'localUpdatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> localUpdatedAt =
+      GeneratedColumn<DateTime>(
+        'local_updated_at',
+        aliasedName,
+        false,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+        defaultValue: currentDateAndTime,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    petId,
+    appointmentDatetime,
+    veterinarianName,
+    motive,
+    notes,
+    status,
+    createdAt,
+    syncState,
+    localUpdatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'local_appointments';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocalAppointment> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('pet_id')) {
+      context.handle(
+        _petIdMeta,
+        petId.isAcceptableOrUnknown(data['pet_id']!, _petIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_petIdMeta);
+    }
+    if (data.containsKey('appointment_datetime')) {
+      context.handle(
+        _appointmentDatetimeMeta,
+        appointmentDatetime.isAcceptableOrUnknown(
+          data['appointment_datetime']!,
+          _appointmentDatetimeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_appointmentDatetimeMeta);
+    }
+    if (data.containsKey('veterinarian_name')) {
+      context.handle(
+        _veterinarianNameMeta,
+        veterinarianName.isAcceptableOrUnknown(
+          data['veterinarian_name']!,
+          _veterinarianNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('motive')) {
+      context.handle(
+        _motiveMeta,
+        motive.isAcceptableOrUnknown(data['motive']!, _motiveMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_motiveMeta);
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('sync_state')) {
+      context.handle(
+        _syncStateMeta,
+        syncState.isAcceptableOrUnknown(data['sync_state']!, _syncStateMeta),
+      );
+    }
+    if (data.containsKey('local_updated_at')) {
+      context.handle(
+        _localUpdatedAtMeta,
+        localUpdatedAt.isAcceptableOrUnknown(
+          data['local_updated_at']!,
+          _localUpdatedAtMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LocalAppointment map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalAppointment(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      petId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pet_id'],
+      )!,
+      appointmentDatetime: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}appointment_datetime'],
+      )!,
+      veterinarianName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}veterinarian_name'],
+      ),
+      motive: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}motive'],
+      )!,
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      syncState: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_state'],
+      )!,
+      localUpdatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}local_updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $LocalAppointmentsTable createAlias(String alias) {
+    return $LocalAppointmentsTable(attachedDatabase, alias);
+  }
+}
+
+class LocalAppointment extends DataClass
+    implements Insertable<LocalAppointment> {
+  final String id;
+  final String petId;
+  final DateTime appointmentDatetime;
+  final String? veterinarianName;
+  final String motive;
+  final String? notes;
+  final String status;
+  final DateTime createdAt;
+  final String syncState;
+  final DateTime localUpdatedAt;
+  const LocalAppointment({
+    required this.id,
+    required this.petId,
+    required this.appointmentDatetime,
+    this.veterinarianName,
+    required this.motive,
+    this.notes,
+    required this.status,
+    required this.createdAt,
+    required this.syncState,
+    required this.localUpdatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['pet_id'] = Variable<String>(petId);
+    map['appointment_datetime'] = Variable<DateTime>(appointmentDatetime);
+    if (!nullToAbsent || veterinarianName != null) {
+      map['veterinarian_name'] = Variable<String>(veterinarianName);
+    }
+    map['motive'] = Variable<String>(motive);
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['status'] = Variable<String>(status);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['sync_state'] = Variable<String>(syncState);
+    map['local_updated_at'] = Variable<DateTime>(localUpdatedAt);
+    return map;
+  }
+
+  LocalAppointmentsCompanion toCompanion(bool nullToAbsent) {
+    return LocalAppointmentsCompanion(
+      id: Value(id),
+      petId: Value(petId),
+      appointmentDatetime: Value(appointmentDatetime),
+      veterinarianName: veterinarianName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(veterinarianName),
+      motive: Value(motive),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      status: Value(status),
+      createdAt: Value(createdAt),
+      syncState: Value(syncState),
+      localUpdatedAt: Value(localUpdatedAt),
+    );
+  }
+
+  factory LocalAppointment.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalAppointment(
+      id: serializer.fromJson<String>(json['id']),
+      petId: serializer.fromJson<String>(json['petId']),
+      appointmentDatetime: serializer.fromJson<DateTime>(
+        json['appointmentDatetime'],
+      ),
+      veterinarianName: serializer.fromJson<String?>(json['veterinarianName']),
+      motive: serializer.fromJson<String>(json['motive']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      status: serializer.fromJson<String>(json['status']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      syncState: serializer.fromJson<String>(json['syncState']),
+      localUpdatedAt: serializer.fromJson<DateTime>(json['localUpdatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'petId': serializer.toJson<String>(petId),
+      'appointmentDatetime': serializer.toJson<DateTime>(appointmentDatetime),
+      'veterinarianName': serializer.toJson<String?>(veterinarianName),
+      'motive': serializer.toJson<String>(motive),
+      'notes': serializer.toJson<String?>(notes),
+      'status': serializer.toJson<String>(status),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'syncState': serializer.toJson<String>(syncState),
+      'localUpdatedAt': serializer.toJson<DateTime>(localUpdatedAt),
+    };
+  }
+
+  LocalAppointment copyWith({
+    String? id,
+    String? petId,
+    DateTime? appointmentDatetime,
+    Value<String?> veterinarianName = const Value.absent(),
+    String? motive,
+    Value<String?> notes = const Value.absent(),
+    String? status,
+    DateTime? createdAt,
+    String? syncState,
+    DateTime? localUpdatedAt,
+  }) => LocalAppointment(
+    id: id ?? this.id,
+    petId: petId ?? this.petId,
+    appointmentDatetime: appointmentDatetime ?? this.appointmentDatetime,
+    veterinarianName: veterinarianName.present
+        ? veterinarianName.value
+        : this.veterinarianName,
+    motive: motive ?? this.motive,
+    notes: notes.present ? notes.value : this.notes,
+    status: status ?? this.status,
+    createdAt: createdAt ?? this.createdAt,
+    syncState: syncState ?? this.syncState,
+    localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
+  );
+  LocalAppointment copyWithCompanion(LocalAppointmentsCompanion data) {
+    return LocalAppointment(
+      id: data.id.present ? data.id.value : this.id,
+      petId: data.petId.present ? data.petId.value : this.petId,
+      appointmentDatetime: data.appointmentDatetime.present
+          ? data.appointmentDatetime.value
+          : this.appointmentDatetime,
+      veterinarianName: data.veterinarianName.present
+          ? data.veterinarianName.value
+          : this.veterinarianName,
+      motive: data.motive.present ? data.motive.value : this.motive,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      status: data.status.present ? data.status.value : this.status,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      syncState: data.syncState.present ? data.syncState.value : this.syncState,
+      localUpdatedAt: data.localUpdatedAt.present
+          ? data.localUpdatedAt.value
+          : this.localUpdatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalAppointment(')
+          ..write('id: $id, ')
+          ..write('petId: $petId, ')
+          ..write('appointmentDatetime: $appointmentDatetime, ')
+          ..write('veterinarianName: $veterinarianName, ')
+          ..write('motive: $motive, ')
+          ..write('notes: $notes, ')
+          ..write('status: $status, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('syncState: $syncState, ')
+          ..write('localUpdatedAt: $localUpdatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    petId,
+    appointmentDatetime,
+    veterinarianName,
+    motive,
+    notes,
+    status,
+    createdAt,
+    syncState,
+    localUpdatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalAppointment &&
+          other.id == this.id &&
+          other.petId == this.petId &&
+          other.appointmentDatetime == this.appointmentDatetime &&
+          other.veterinarianName == this.veterinarianName &&
+          other.motive == this.motive &&
+          other.notes == this.notes &&
+          other.status == this.status &&
+          other.createdAt == this.createdAt &&
+          other.syncState == this.syncState &&
+          other.localUpdatedAt == this.localUpdatedAt);
+}
+
+class LocalAppointmentsCompanion extends UpdateCompanion<LocalAppointment> {
+  final Value<String> id;
+  final Value<String> petId;
+  final Value<DateTime> appointmentDatetime;
+  final Value<String?> veterinarianName;
+  final Value<String> motive;
+  final Value<String?> notes;
+  final Value<String> status;
+  final Value<DateTime> createdAt;
+  final Value<String> syncState;
+  final Value<DateTime> localUpdatedAt;
+  final Value<int> rowid;
+  const LocalAppointmentsCompanion({
+    this.id = const Value.absent(),
+    this.petId = const Value.absent(),
+    this.appointmentDatetime = const Value.absent(),
+    this.veterinarianName = const Value.absent(),
+    this.motive = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.status = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.syncState = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LocalAppointmentsCompanion.insert({
+    required String id,
+    required String petId,
+    required DateTime appointmentDatetime,
+    this.veterinarianName = const Value.absent(),
+    required String motive,
+    this.notes = const Value.absent(),
+    this.status = const Value.absent(),
+    required DateTime createdAt,
+    this.syncState = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       petId = Value(petId),
+       appointmentDatetime = Value(appointmentDatetime),
+       motive = Value(motive),
+       createdAt = Value(createdAt);
+  static Insertable<LocalAppointment> custom({
+    Expression<String>? id,
+    Expression<String>? petId,
+    Expression<DateTime>? appointmentDatetime,
+    Expression<String>? veterinarianName,
+    Expression<String>? motive,
+    Expression<String>? notes,
+    Expression<String>? status,
+    Expression<DateTime>? createdAt,
+    Expression<String>? syncState,
+    Expression<DateTime>? localUpdatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (petId != null) 'pet_id': petId,
+      if (appointmentDatetime != null)
+        'appointment_datetime': appointmentDatetime,
+      if (veterinarianName != null) 'veterinarian_name': veterinarianName,
+      if (motive != null) 'motive': motive,
+      if (notes != null) 'notes': notes,
+      if (status != null) 'status': status,
+      if (createdAt != null) 'created_at': createdAt,
+      if (syncState != null) 'sync_state': syncState,
+      if (localUpdatedAt != null) 'local_updated_at': localUpdatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LocalAppointmentsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? petId,
+    Value<DateTime>? appointmentDatetime,
+    Value<String?>? veterinarianName,
+    Value<String>? motive,
+    Value<String?>? notes,
+    Value<String>? status,
+    Value<DateTime>? createdAt,
+    Value<String>? syncState,
+    Value<DateTime>? localUpdatedAt,
+    Value<int>? rowid,
+  }) {
+    return LocalAppointmentsCompanion(
+      id: id ?? this.id,
+      petId: petId ?? this.petId,
+      appointmentDatetime: appointmentDatetime ?? this.appointmentDatetime,
+      veterinarianName: veterinarianName ?? this.veterinarianName,
+      motive: motive ?? this.motive,
+      notes: notes ?? this.notes,
+      status: status ?? this.status,
+      createdAt: createdAt ?? this.createdAt,
+      syncState: syncState ?? this.syncState,
+      localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (petId.present) {
+      map['pet_id'] = Variable<String>(petId.value);
+    }
+    if (appointmentDatetime.present) {
+      map['appointment_datetime'] = Variable<DateTime>(
+        appointmentDatetime.value,
+      );
+    }
+    if (veterinarianName.present) {
+      map['veterinarian_name'] = Variable<String>(veterinarianName.value);
+    }
+    if (motive.present) {
+      map['motive'] = Variable<String>(motive.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (syncState.present) {
+      map['sync_state'] = Variable<String>(syncState.value);
+    }
+    if (localUpdatedAt.present) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalAppointmentsCompanion(')
+          ..write('id: $id, ')
+          ..write('petId: $petId, ')
+          ..write('appointmentDatetime: $appointmentDatetime, ')
+          ..write('veterinarianName: $veterinarianName, ')
+          ..write('motive: $motive, ')
+          ..write('notes: $notes, ')
+          ..write('status: $status, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('syncState: $syncState, ')
+          ..write('localUpdatedAt: $localUpdatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3407,6 +4085,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $PendingConsultationPhotosTable pendingConsultationPhotos =
       $PendingConsultationPhotosTable(this);
+  late final $LocalAppointmentsTable localAppointments =
+      $LocalAppointmentsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3418,6 +4098,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     localVaccines,
     localDewormings,
     pendingConsultationPhotos,
+    localAppointments,
   ];
 }
 
@@ -3431,6 +4112,7 @@ typedef $$LocalPetsTableCreateCompanionBuilder =
       Value<DateTime?> birthDate,
       Value<String?> sex,
       Value<String?> photoUrl,
+      Value<String?> localPhotoPath,
       Value<bool> notificationsEnabled,
       required DateTime createdAt,
       Value<String> syncState,
@@ -3447,6 +4129,7 @@ typedef $$LocalPetsTableUpdateCompanionBuilder =
       Value<DateTime?> birthDate,
       Value<String?> sex,
       Value<String?> photoUrl,
+      Value<String?> localPhotoPath,
       Value<bool> notificationsEnabled,
       Value<DateTime> createdAt,
       Value<String> syncState,
@@ -3500,6 +4183,11 @@ class $$LocalPetsTableFilterComposer
 
   ColumnFilters<String> get photoUrl => $composableBuilder(
     column: $table.photoUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get localPhotoPath => $composableBuilder(
+    column: $table.localPhotoPath,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3573,6 +4261,11 @@ class $$LocalPetsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get localPhotoPath => $composableBuilder(
+    column: $table.localPhotoPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get notificationsEnabled => $composableBuilder(
     column: $table.notificationsEnabled,
     builder: (column) => ColumnOrderings(column),
@@ -3627,6 +4320,11 @@ class $$LocalPetsTableAnnotationComposer
   GeneratedColumn<String> get photoUrl =>
       $composableBuilder(column: $table.photoUrl, builder: (column) => column);
 
+  GeneratedColumn<String> get localPhotoPath => $composableBuilder(
+    column: $table.localPhotoPath,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get notificationsEnabled => $composableBuilder(
     column: $table.notificationsEnabled,
     builder: (column) => column,
@@ -3680,6 +4378,7 @@ class $$LocalPetsTableTableManager
                 Value<DateTime?> birthDate = const Value.absent(),
                 Value<String?> sex = const Value.absent(),
                 Value<String?> photoUrl = const Value.absent(),
+                Value<String?> localPhotoPath = const Value.absent(),
                 Value<bool> notificationsEnabled = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<String> syncState = const Value.absent(),
@@ -3694,6 +4393,7 @@ class $$LocalPetsTableTableManager
                 birthDate: birthDate,
                 sex: sex,
                 photoUrl: photoUrl,
+                localPhotoPath: localPhotoPath,
                 notificationsEnabled: notificationsEnabled,
                 createdAt: createdAt,
                 syncState: syncState,
@@ -3710,6 +4410,7 @@ class $$LocalPetsTableTableManager
                 Value<DateTime?> birthDate = const Value.absent(),
                 Value<String?> sex = const Value.absent(),
                 Value<String?> photoUrl = const Value.absent(),
+                Value<String?> localPhotoPath = const Value.absent(),
                 Value<bool> notificationsEnabled = const Value.absent(),
                 required DateTime createdAt,
                 Value<String> syncState = const Value.absent(),
@@ -3724,6 +4425,7 @@ class $$LocalPetsTableTableManager
                 birthDate: birthDate,
                 sex: sex,
                 photoUrl: photoUrl,
+                localPhotoPath: localPhotoPath,
                 notificationsEnabled: notificationsEnabled,
                 createdAt: createdAt,
                 syncState: syncState,
@@ -5125,6 +5827,320 @@ typedef $$PendingConsultationPhotosTableProcessedTableManager =
       PendingConsultationPhoto,
       PrefetchHooks Function()
     >;
+typedef $$LocalAppointmentsTableCreateCompanionBuilder =
+    LocalAppointmentsCompanion Function({
+      required String id,
+      required String petId,
+      required DateTime appointmentDatetime,
+      Value<String?> veterinarianName,
+      required String motive,
+      Value<String?> notes,
+      Value<String> status,
+      required DateTime createdAt,
+      Value<String> syncState,
+      Value<DateTime> localUpdatedAt,
+      Value<int> rowid,
+    });
+typedef $$LocalAppointmentsTableUpdateCompanionBuilder =
+    LocalAppointmentsCompanion Function({
+      Value<String> id,
+      Value<String> petId,
+      Value<DateTime> appointmentDatetime,
+      Value<String?> veterinarianName,
+      Value<String> motive,
+      Value<String?> notes,
+      Value<String> status,
+      Value<DateTime> createdAt,
+      Value<String> syncState,
+      Value<DateTime> localUpdatedAt,
+      Value<int> rowid,
+    });
+
+class $$LocalAppointmentsTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalAppointmentsTable> {
+  $$LocalAppointmentsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get petId => $composableBuilder(
+    column: $table.petId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get appointmentDatetime => $composableBuilder(
+    column: $table.appointmentDatetime,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get veterinarianName => $composableBuilder(
+    column: $table.veterinarianName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get motive => $composableBuilder(
+    column: $table.motive,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get syncState => $composableBuilder(
+    column: $table.syncState,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LocalAppointmentsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalAppointmentsTable> {
+  $$LocalAppointmentsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get petId => $composableBuilder(
+    column: $table.petId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get appointmentDatetime => $composableBuilder(
+    column: $table.appointmentDatetime,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get veterinarianName => $composableBuilder(
+    column: $table.veterinarianName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get motive => $composableBuilder(
+    column: $table.motive,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get syncState => $composableBuilder(
+    column: $table.syncState,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LocalAppointmentsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalAppointmentsTable> {
+  $$LocalAppointmentsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get petId =>
+      $composableBuilder(column: $table.petId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get appointmentDatetime => $composableBuilder(
+    column: $table.appointmentDatetime,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get veterinarianName => $composableBuilder(
+    column: $table.veterinarianName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get motive =>
+      $composableBuilder(column: $table.motive, builder: (column) => column);
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get syncState =>
+      $composableBuilder(column: $table.syncState, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => column,
+  );
+}
+
+class $$LocalAppointmentsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LocalAppointmentsTable,
+          LocalAppointment,
+          $$LocalAppointmentsTableFilterComposer,
+          $$LocalAppointmentsTableOrderingComposer,
+          $$LocalAppointmentsTableAnnotationComposer,
+          $$LocalAppointmentsTableCreateCompanionBuilder,
+          $$LocalAppointmentsTableUpdateCompanionBuilder,
+          (
+            LocalAppointment,
+            BaseReferences<
+              _$AppDatabase,
+              $LocalAppointmentsTable,
+              LocalAppointment
+            >,
+          ),
+          LocalAppointment,
+          PrefetchHooks Function()
+        > {
+  $$LocalAppointmentsTableTableManager(
+    _$AppDatabase db,
+    $LocalAppointmentsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LocalAppointmentsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LocalAppointmentsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LocalAppointmentsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> petId = const Value.absent(),
+                Value<DateTime> appointmentDatetime = const Value.absent(),
+                Value<String?> veterinarianName = const Value.absent(),
+                Value<String> motive = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<String> syncState = const Value.absent(),
+                Value<DateTime> localUpdatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalAppointmentsCompanion(
+                id: id,
+                petId: petId,
+                appointmentDatetime: appointmentDatetime,
+                veterinarianName: veterinarianName,
+                motive: motive,
+                notes: notes,
+                status: status,
+                createdAt: createdAt,
+                syncState: syncState,
+                localUpdatedAt: localUpdatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String petId,
+                required DateTime appointmentDatetime,
+                Value<String?> veterinarianName = const Value.absent(),
+                required String motive,
+                Value<String?> notes = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                required DateTime createdAt,
+                Value<String> syncState = const Value.absent(),
+                Value<DateTime> localUpdatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalAppointmentsCompanion.insert(
+                id: id,
+                petId: petId,
+                appointmentDatetime: appointmentDatetime,
+                veterinarianName: veterinarianName,
+                motive: motive,
+                notes: notes,
+                status: status,
+                createdAt: createdAt,
+                syncState: syncState,
+                localUpdatedAt: localUpdatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LocalAppointmentsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LocalAppointmentsTable,
+      LocalAppointment,
+      $$LocalAppointmentsTableFilterComposer,
+      $$LocalAppointmentsTableOrderingComposer,
+      $$LocalAppointmentsTableAnnotationComposer,
+      $$LocalAppointmentsTableCreateCompanionBuilder,
+      $$LocalAppointmentsTableUpdateCompanionBuilder,
+      (
+        LocalAppointment,
+        BaseReferences<
+          _$AppDatabase,
+          $LocalAppointmentsTable,
+          LocalAppointment
+        >,
+      ),
+      LocalAppointment,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -5144,4 +6160,6 @@ class $AppDatabaseManager {
         _db,
         _db.pendingConsultationPhotos,
       );
+  $$LocalAppointmentsTableTableManager get localAppointments =>
+      $$LocalAppointmentsTableTableManager(_db, _db.localAppointments);
 }

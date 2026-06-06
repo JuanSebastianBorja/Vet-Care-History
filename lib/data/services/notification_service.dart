@@ -5,6 +5,7 @@ import 'package:timezone/data/latest.dart' as tz;
 import 'package:workmanager/workmanager.dart';
 import 'dart:io' show Platform;
 import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -30,6 +31,15 @@ class NotificationService {
 
     // Inicializar timezones
     tz.initializeTimeZones();
+    try {
+      final timezoneInfo = await FlutterTimezone.getLocalTimezone();
+      tz.setLocalLocation(tz.getLocation(timezoneInfo.identifier));
+    } catch (_) {
+      // Fallback a America/Bogota o UTC si falla
+      try {
+        tz.setLocalLocation(tz.getLocation('America/Bogota'));
+      } catch (_) {}
+    }
 
     // Configuración para Android
     const androidSettings = AndroidInitializationSettings(
@@ -59,17 +69,21 @@ class NotificationService {
     // Solicitar permisos explícitos (Android 13+)
     await _requestPermissions();
 
-    // Inicializar WorkManager para resincronizar notificaciones al reiniciar
+    _isInitialized = true;
+  }
+
+  Future<void> initializeBackgroundTasks() async {
+    if (!_isInitialized) await init();
+
+    // Initialize WorkManager after app is running
     await Workmanager().initialize(_backgroundTaskRunner, isInDebugMode: false);
 
-    // Registrar tarea periódica para verificar recordatorios (ej. cada 12 horas)
+    // Register periodic task
     await Workmanager().registerPeriodicTask(
       'notification-sync',
       _backgroundTask,
       frequency: const Duration(hours: 12),
     );
-
-    _isInitialized = true;
   }
 
   /// Crea los canales de notificación para Android

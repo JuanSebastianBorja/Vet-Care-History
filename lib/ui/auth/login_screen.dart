@@ -25,27 +25,67 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    print('🔐 [LoginScreen] Botón "Iniciar Sesión" presionado');
+    if (!_formKey.currentState!.validate()) {
+      print('🔐 [LoginScreen] Validación del formulario falló');
+      return;
+    }
+
     final vm = context.read<AuthViewModel>();
-    final ok = await vm.login(_emailCtrl.text.trim(), _passwordCtrl.text);
-    if (!mounted) return;
-    if (ok) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const PetListScreen()),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(vm.error ?? 'Error al iniciar sesión'),
-          backgroundColor: Colors.red.shade600,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+    try {
+      print('🔐 [LoginScreen] Llamando AuthViewModel.login...');
+      final ok = await vm.login(_emailCtrl.text.trim(), _passwordCtrl.text);
+      print('🔐 [LoginScreen] login retornó ok=$ok | error=${vm.error}');
+
+      if (!mounted) return;
+      if (ok) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const PetListScreen()),
+        );
+      } else {
+        _showLoginError(vm.error ?? 'Error al iniciar sesión');
+      }
+    } catch (e, st) {
+      print('🚨 ERROR CAPTURADO EN LOGIN: $e');
+      print('🚨 STACK TRACE LoginScreen._submit: $st');
+      if (!mounted) return;
+      _showLoginError(e.toString());
+    }
+  }
+
+  void _showLoginError(String message) {
+    final text = message.replaceAll('Exception: ', '');
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(text),
+        backgroundColor: Colors.red.shade600,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: Icon(Icons.error_outline, color: Colors.red.shade600, size: 36),
+        title: const Text('Error al iniciar sesión'),
+        content: SingleChildScrollView(
+          child: SelectableText(
+            text,
+            style: const TextStyle(fontSize: 14),
           ),
         ),
-      );
-    }
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Entendido'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _googleSignIn() async {
@@ -74,24 +114,40 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF2E7D32),
-      body: Column(
-        children: [
-          _buildHeader(),
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                color: Color(0xFFF5FAF5),
-                borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-              ),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(28, 32, 28, 28),
-                child: _buildForm(),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF0B5945), Color(0xFF10B981)],
+          ),
+        ),
+        child: Column(
+          children: [
+            _buildHeader(),
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF6FAF8),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(36)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 15,
+                      offset: Offset(0, -5),
+                    ),
+                  ],
+                ),
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(28, 36, 28, 28),
+                  child: _buildForm(),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -107,25 +163,33 @@ class _LoginScreenState extends State<LoginScreen> {
               width: 88,
               height: 88,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(24),
+                color: Colors.white.withValues(alpha: 0.18),
+                borderRadius: BorderRadius.circular(26),
+                border: Border.all(color: Colors.white24, width: 1.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              child: const Icon(Icons.pets, size: 52, color: Colors.white),
+              child: const Icon(Icons.pets, size: 48, color: Colors.white),
             ),
             const SizedBox(height: 16),
             const Text(
               'VetCare',
               style: TextStyle(
-                fontSize: 36,
+                fontSize: 38,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
-                letterSpacing: 1.2,
+                letterSpacing: 1.5,
               ),
             ),
             const SizedBox(height: 6),
             const Text(
               'Expediente clínico para tus mascotas',
-              style: TextStyle(fontSize: 14, color: Colors.white70),
+              style: TextStyle(fontSize: 14, color: Colors.white70, fontWeight: FontWeight.w500),
               textAlign: TextAlign.center,
             ),
           ],
